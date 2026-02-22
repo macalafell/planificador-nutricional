@@ -16,7 +16,7 @@ const repartos = {
 
 // 2. CARGA AUTOMÁTICA DESDE GOOGLE DRIVE
 window.onload = function() {
-    if (URL_GOOGLE_SHEET === https://docs.google.com/spreadsheets/d/e/2PACX-1vSC-tV7twQSz6BF_y88Q9FfRPc5k1EWzAqTnHmrXtY2vbzzaer88gHpiIRF-c8WCCCAF_iiCcOWoQHg/pub?gid=0&single=true&output=csv) {
+    if (URL_GOOGLE_SHEET === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSC-tV7twQSz6BF_y88Q9FfRPc5k1EWzAqTnHmrXtY2vbzzaer88gHpiIRF-c8WCCCAF_iiCcOWoQHg/pub?gid=0&single=true&output=csv') {
         document.getElementById('statusCsv').innerText = "⚠️ Configura la URL de Google Sheets en script.js";
         return;
     }
