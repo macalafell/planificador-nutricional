@@ -1,130 +1,65 @@
 /**
- * PLANIFICADOR NUTRICIONAL - MIQUEL (VERSIÓN FINAL COMPLETA)
- * Enfoque: Científico-Contable para Trail Running
+ * PLANIFICADOR NUTRICIONAL MIQUEL - VERSIÓN AUDITORÍA TOTAL
  */
 
-// Variables de estado global
 let baseDatosAlimentos = [];
 let ingredientesElegidos = [];
 
-// Matriz de reparto (Porcentajes sobre el total de macros del día)
 const REPARTOS = {
-    desayuno: { p: 0.10, g: 0.10, ch: 0.27 },
-    comida:   { p: 0.39, g: 0.40, ch: 0.26 },
-    merienda: { p: 0.08, g: 0.06, ch: 0.17 },
-    cena:     { p: 0.43, g: 0.44, ch: 0.30 }
+    desayuno: { p: 0.10, g: 0.10, ch: 0.27, label: "Desayuno (15%)" },
+    comida:   { p: 0.39, g: 0.40, ch: 0.26, label: "Comida (35%)" },
+    merienda: { p: 0.08, g: 0.06, ch: 0.17, label: "Merienda (10%)" },
+    cena:     { p: 0.43, g: 0.44, ch: 0.30, label: "Cena (40%)" }
 };
 
 window.onload = function() {
-    console.log("Sistema cargado. Iniciando auditoría de datos...");
     cargarDatosCSV();
-    
-    // Configuración del Slider de Ajuste
     const slider = document.getElementById('ajuste');
-    if(slider) {
-        slider.oninput = function() {
-            document.getElementById('valAjuste').innerText = this.value + '%';
-        };
-    }
+    if(slider) slider.oninput = function() { document.getElementById('valAjuste').innerText = this.value + '%'; };
 };
 
-/**
- * 1. CARGA Y PROCESAMIENTO DE DATOS (CSV)
- */
 async function cargarDatosCSV() {
     const statusDiv = document.getElementById('statusCsv');
     try {
-        // Cache busting con timestamp para evitar versiones antiguas
         const respuesta = await fetch('./alimentos.csv?v=' + Date.now());
-        if (!respuesta.ok) throw new Error("Archivo alimentos.csv no encontrado en el servidor.");
-        
         const texto = await respuesta.text();
         const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-        
-        // Procesamiento con limpieza de comas decimales (formato contable ES)
         baseDatosAlimentos = lineas.slice(1).map(linea => {
             const col = linea.split(/[,;\t]/); 
             if (col.length >= 5) {
                 const limpiarNum = (val) => parseFloat(val.replace(',', '.').trim());
-                return {
-                    nombre: col[0].trim(),
-                    kcal: limpiarNum(col[1]),
-                    p:    limpiarNum(col[2]),
-                    g:    limpiarNum(col[3]),
-                    ch:   limpiarNum(col[4])
-                };
+                return { nombre: col[0].trim(), kcal: limpiarNum(col[1]), p: limpiarNum(col[2]), g: limpiarNum(col[3]), ch: limpiarNum(col[4]) };
             }
             return null;
-        }).filter(a => a !== null && !isNaN(a.kcal));
-
+        }).filter(a => a !== null);
         if (baseDatosAlimentos.length > 0) {
-            statusDiv.innerHTML = `✅ <strong>${baseDatosAlimentos.length}</strong> alimentos cargados correctamente.`;
+            statusDiv.innerHTML = `✅ ${baseDatosAlimentos.length} alimentos listos.`;
             document.getElementById('diseñador').style.display = 'block';
-            poblarDatalist();
-        } else {
-            statusDiv.innerHTML = "⚠️ El CSV se leyó pero no hay datos válidos. Revisa el formato.";
+            const dl = document.getElementById('listaIngredientes');
+            baseDatosAlimentos.forEach(al => { const opt = document.createElement('option'); opt.value = al.nombre; dl.appendChild(opt); });
         }
-    } catch (e) {
-        statusDiv.innerHTML = `❌ Error de sistema: ${e.message}`;
-        console.error(e);
-    }
+    } catch (e) { statusDiv.innerHTML = "❌ Error cargando CSV"; }
 }
 
-function poblarDatalist() {
-    const dl = document.getElementById('listaIngredientes');
-    dl.innerHTML = "";
-    baseDatosAlimentos.forEach(al => {
-        const opt = document.createElement('option');
-        opt.value = al.nombre;
-        dl.appendChild(opt);
-    });
-}
-
-/**
- * 2. GESTIÓN DE LA LISTA DE INGREDIENTES (BUSCADOR)
- */
 window.añadirAlimentoLista = function() {
     const input = document.getElementById('buscadorIngrediente');
-    const nombre = input.value.trim();
-    // Búsqueda insensible a mayúsculas
-    const alimento = baseDatosAlimentos.find(a => a.nombre.toLowerCase() === nombre.toLowerCase());
-
-    if (alimento) {
-        if (!ingredientesElegidos.find(i => i.nombre === alimento.nombre)) {
-            ingredientesElegidos.push(alimento);
-            renderizarListaElegidos();
-            input.value = "";
-            input.focus();
-        } else {
-            alert("Este alimento ya está en la receta.");
-        }
-    } else {
-        alert("Alimento no reconocido. Por favor, selecciona uno del desplegable.");
+    const al = baseDatosAlimentos.find(a => a.nombre.toLowerCase() === input.value.trim().toLowerCase());
+    if (al && !ingredientesElegidos.includes(al)) {
+        ingredientesElegidos.push(al);
+        renderizarLista();
+        input.value = "";
     }
 };
 
-function renderizarListaElegidos() {
+function renderizarLista() {
     const ul = document.getElementById('ulSeleccionados');
-    ul.innerHTML = "";
-    ingredientesElegidos.forEach((al, index) => {
-        const li = document.createElement('li');
-        li.className = "ingrediente-tag";
-        li.innerHTML = `
-            <span>${al.nombre}</span>
-            <span class="btn-remove" onclick="eliminarIngrediente(${index})">✕</span>
-        `;
-        ul.appendChild(li);
-    });
+    ul.innerHTML = ingredientesElegidos.map((al, idx) => `
+        <li class="ingrediente-tag">${al.nombre} <span class="btn-remove" onclick="eliminarIngrediente(${idx})">✕</span></li>
+    `).join('');
 }
 
-window.eliminarIngrediente = function(index) {
-    ingredientesElegidos.splice(index, 1);
-    renderizarListaElegidos();
-};
+window.eliminarIngrediente = function(idx) { ingredientesElegidos.splice(idx, 1); renderizarLista(); };
 
-/**
- * 3. CÁLCULO DE OBJETIVOS DIARIOS (PASO 2)
- */
 window.calcularObjetivos = function() {
     const peso = parseFloat(document.getElementById('peso').value);
     const altura = parseFloat(document.getElementById('altura').value);
@@ -132,14 +67,9 @@ window.calcularObjetivos = function() {
     const genero = document.getElementById('genero').value;
     const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
 
-    // Ecuación de Harris-Benedict revisada
-    let bmr = (genero === 'hombre') 
-        ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
-        : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
-
-    // Sobrescritura manual si existe
-    const manualKcal = parseFloat(document.getElementById('kcalManual').value);
-    if (!isNaN(manualKcal) && manualKcal > 0) bmr = manualKcal;
+    let bmr = (genero === 'hombre') ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad) : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
+    const manual = parseFloat(document.getElementById('kcalManual').value);
+    if (!isNaN(manual) && manual > 0) bmr = manual;
 
     const intensidades = [
         { id: 'Alta', m: parseFloat(document.getElementById('multAlta').value), p: 2.0, g: 1.1 },
@@ -147,95 +77,87 @@ window.calcularObjetivos = function() {
         { id: 'Baja', m: parseFloat(document.getElementById('multBaja').value), p: 1.4, g: 0.7 }
     ];
 
-    let tabla = `<table><tr><th>Día</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
-    intensidades.forEach(d => {
-        const kcalTotal = bmr * d.m * ajuste;
-        const pG = peso * d.p;
-        const gG = peso * d.g;
-        const chG = (kcalTotal - (pG * 4) - (gG * 9)) / 4;
-        tabla += `<tr><td><strong>${d.id}</strong></td><td>${Math.round(kcalTotal)}</td><td>${Math.round(pG)}</td><td>${Math.round(gG)}</td><td>${Math.round(chG)}</td></tr>`;
-    });
-    tabla += `</table>`;
+    let html = `<table><tr><th>Día / Comida</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
     
-    document.getElementById('tablaResumen').innerHTML = tabla;
+    intensidades.forEach(d => {
+        const kcalT = bmr * d.m * ajuste;
+        const pT = peso * d.p;
+        const gT = peso * d.g;
+        const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
+
+        // Fila del TOTAL del día
+        html += `<tr style="background:#eee; font-weight:bold;"><td>TOTAL ${d.id}</td><td>${Math.round(kcalT)}</td><td>${Math.round(pT)}</td><td>${Math.round(gT)}</td><td>${Math.round(chT)}</td></tr>`;
+        
+        // Filas del DESGLOSE por comidas
+        Object.keys(REPARTOS).forEach(c => {
+            const rep = REPARTOS[c];
+            html += `<tr style="font-size:0.85rem; color:#555;">
+                <td>&nbsp;&nbsp;↳ ${c.charAt(0).toUpperCase() + c.slice(1)}</td>
+                <td>${Math.round(kcalT * (rep.p*0.4 + rep.g*0.4 + rep.ch*0.2))}</td> <td>${(pT * rep.p).toFixed(1)}</td>
+                <td>${(gT * rep.g).toFixed(1)}</td>
+                <td>${(chT * rep.ch).toFixed(1)}</td>
+            </tr>`;
+        });
+    });
+    html += `</table>`;
+    document.getElementById('tablaResumen').innerHTML = html;
     document.getElementById('resultados').style.display = 'block';
 };
 
-/**
- * 4. SOLVER DE RECETA (PASO 4)
- */
 window.ejecutarSolverReceta = function() {
     const comida = document.getElementById('comidaSeleccionada').value;
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
-    const tablaResumen = document.getElementById('tablaResumen');
+    const tabla = document.getElementById('tablaResumen').querySelector('table');
     
-    // Verificamos si existe la tabla de objetivos
-    if (!tablaResumen.querySelector('table')) {
-        alert("Primero debes calcular los Objetivos Diarios en el Paso 2.");
-        return;
-    }
+    if(!tabla || ingredientesElegidos.length === 0) return alert("Calcula objetivos y elige ingredientes.");
 
-    if (ingredientesElegidos.length === 0) {
-        alert("Añade ingredientes a la receta usando el buscador.");
-        return;
-    }
-
-    // Extraer objetivos específicos para la comida seleccionada
-    let objComida = null;
-    const filas = tablaResumen.querySelectorAll('tr');
+    let obj = null;
+    const filas = tabla.querySelectorAll('tr');
     filas.forEach(f => {
-        if(f.cells[0].innerText.includes(tipoDia)) {
-            objComida = {
-                p: parseFloat(f.cells[2].innerText) * REPARTOS[comida].p,
-                g: parseFloat(f.cells[3].innerText) * REPARTOS[comida].g,
-                ch: parseFloat(f.cells[4].innerText) * REPARTOS[comida].ch
-            };
+        if(f.cells[0].innerText.includes(comida.charAt(0).toUpperCase() + comida.slice(1)) && 
+           f.previousElementSibling && f.previousElementSibling.innerText.includes(tipoDia)) {
+             // Este selector busca la fila de la comida que está justo debajo del total del tipo de día
         }
     });
 
-    // Algoritmo Solver: Ajuste iterativo de masas
-    let gramos = ingredientesElegidos.map(() => 100); 
-    const iteraciones = 1000;
-    const factorAprendizaje = 0.1;
+    // Forma más segura de obtener el objetivo: Recalcularlo igual que en la tabla
+    const peso = parseFloat(document.getElementById('peso').value);
+    const intensidades = { 'Alta': {p:2.0, g:1.1, m:parseFloat(document.getElementById('multAlta').value)}, 'Media': {p:1.7, g:1.1, m:parseFloat(document.getElementById('multMedia').value)}, 'Baja': {p:1.4, g:0.7, m:parseFloat(document.getElementById('multBaja').value)}};
+    const det = intensidades[tipoDia];
+    const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
+    let bmr = (document.getElementById('genero').value === 'hombre') ? 88.36 + (13.4 * peso) + (4.8 * 180) - (5.7 * 34) : 447.59 + (9.2 * peso) + (3.1 * 180) - (4.3 * 34);
+    if (parseFloat(document.getElementById('kcalManual').value) > 0) bmr = parseFloat(document.getElementById('kcalManual').value);
+    
+    const kcalT = bmr * det.m * ajuste;
+    const pT = peso * det.p;
+    const gT = peso * det.g;
+    const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
 
-    for(let i=0; i < iteraciones; i++) {
-        let actualP = 0, actualG = 0, actualCH = 0;
-        
-        // Calcular macros actuales con las cantidades de esta iteración
+    obj = { p: pT * REPARTOS[comida].p, g: gT * REPARTOS[comida].g, ch: chT * REPARTOS[comida].ch };
+
+    // SOLVER MEJORADO
+    let gramos = ingredientesElegidos.map(() => 50);
+    for(let i=0; i<2000; i++) {
+        let cP=0, cG=0, cCH=0;
         ingredientesElegidos.forEach((al, idx) => {
-            actualP += (al.p * gramos[idx] / 100);
-            actualG += (al.g * gramos[idx] / 100);
-            actualCH += (al.ch * gramos[idx] / 100);
+            cP += (al.p * gramos[idx] / 100);
+            cG += (al.g * gramos[idx] / 100);
+            cCH += (al.ch * gramos[idx] / 100);
         });
 
-        // Ajustar cada ingrediente según su macro dominante para cerrar el error
         ingredientesElegidos.forEach((al, idx) => {
-            let correccion = 0;
-            if (al.p > al.ch && al.p > al.g) {
-                correccion = (objComida.p - actualP) * factorAprendizaje;
-            } else if (al.g > al.p && al.g > al.ch) {
-                correccion = (objComida.g - actualG) * factorAprendizaje;
-            } else {
-                correccion = (objComida.ch - actualCH) * factorAprendizaje;
-            }
-            gramos[idx] = Math.max(0, gramos[idx] + correccion);
+            let diff = 0;
+            if (al.p > al.ch && al.p > al.g) diff = (obj.p - cP) * 0.2;
+            else if (al.g > al.p && al.g > al.ch) diff = (obj.g - cG) * 0.2;
+            else diff = (obj.ch - cCH) * 0.2;
+            gramos[idx] = Math.max(0, gramos[idx] + diff);
         });
     }
 
-    // Renderizar Receta Final
-    let resHTML = `<div class="receta-box">
-        <h3>Cantidades para tu ${comida} (${tipoDia}):</h3>
-        <p style="font-size:0.8rem; color:#555;">Objetivo parcial: P:${objComida.p.toFixed(1)}g | G:${objComida.g.toFixed(1)}g | CH:${objComida.ch.toFixed(1)}g</p>
-        <ul style="font-weight:bold; font-size:1.1rem; border-top: 1px solid #aaa; padding-top:10px;">`;
-    
+    let res = `<div class="receta-box"><h3>${comida.toUpperCase()} (${tipoDia})</h3><ul>`;
     ingredientesElegidos.forEach((al, i) => {
-        if(gramos[i] > 0.5) { // Evitamos mostrar trazas insignificantes
-            resHTML += `<li>${Math.round(gramos[i])}g de ${al.nombre}</li>`;
-        }
+        if(gramos[i] > 1) res += `<li><strong>${Math.round(gramos[i])}g</strong> de ${al.nombre}</li>`;
     });
-    
-    resHTML += `</ul></div>`;
-    document.getElementById('objetivoComidaDetalle').innerHTML = resHTML;
-    // Scroll suave al resultado
-    document.getElementById('objetivoComidaDetalle').scrollIntoView({ behavior: 'smooth' });
+    res += `</ul><p style="font-size:0.8rem; border-top:1px solid #ccc; padding-top:5px;">Macros alcanzados: P:${cP.toFixed(1)} | G:${cG.toFixed(1)} | CH:${cCH.toFixed(1)}</p></div>`;
+    document.getElementById('objetivoComidaDetalle').innerHTML = res;
 };
