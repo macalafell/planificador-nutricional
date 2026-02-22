@@ -18,30 +18,33 @@ const repartos = {
 window.onload = function() {
     fetch(URL_GOOGLE_SHEET)
         .then(response => {
-            if (!response.ok) throw new Error("No se pudo encontrar el archivo alimentos.csv");
+            if (!response.ok) throw new Error("No se encuentra el archivo");
             return response.text();
         })
         .then(data => {
             const lineas = data.split(/\r?\n/).filter(linea => linea.trim() !== "");
             baseDatosAlimentos = lineas.slice(1).map(linea => {
-                const columnas = linea.split(',').map(col => col.trim());
-                if(columnas.length >= 5) {
+                // ESTA LÍNEA ES LA CLAVE: Detecta coma o punto y coma
+                const columnas = linea.includes(';') ? linea.split(';') : linea.split(',');
+                const cols = columnas.map(col => col.trim().replace(',', '.')); // Cambia comas decimales por puntos
+                
+                if(cols.length >= 5) {
                     return { 
-                        nombre: columnas[0], 
-                        kcal: parseFloat(columnas[1]), 
-                        p: parseFloat(columnas[2]), 
-                        g: parseFloat(columnas[3]), 
-                        ch: parseFloat(columnas[4]) 
+                        nombre: cols[0], 
+                        kcal: parseFloat(cols[1]), 
+                        p: parseFloat(cols[2]), 
+                        g: parseFloat(cols[3]), 
+                        ch: parseFloat(cols[4]) 
                     };
                 }
             }).filter(a => a && !isNaN(a.kcal));
 
-            document.getElementById('statusCsv').innerText = `✅ Alimentos cargados desde GitHub: ${baseDatosAlimentos.length}`;
+            document.getElementById('statusCsv').innerHTML = `✅ <strong>${baseDatosAlimentos.length}</strong> alimentos cargados desde GitHub.`;
             document.getElementById('diseñador').style.display = 'block';
             generarSelectorAlimentos();
         })
         .catch(err => {
-            document.getElementById('statusCsv').innerText = "❌ Error: Asegúrate de que el archivo se llama 'alimentos.csv' y está en GitHub.";
+            document.getElementById('statusCsv').innerText = "❌ Error al cargar alimentos.csv";
             console.error(err);
         });
 };
