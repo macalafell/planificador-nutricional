@@ -109,16 +109,92 @@ window.ejecutarSolverReceta = function() {
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
     const tabla = document.getElementById('tablaResumen').querySelector('table');
     
-    if(!tabla || ingredientesElegidos.length === 0) return alert("Calcula objetivos y elige ingredientes.");
+    if(!tabla || ingredientesElegidos.length === 0) {
+        return alert("Primero calcula objetivos (Paso A) y añade ingredientes.");
+    }
 
-    let obj = null;
-    const filas = tabla.querySelectorAll('tr');
-    filas.forEach(f => {
-        if(f.cells[0].innerText.includes(comida.charAt(0).toUpperCase() + comida.slice(1)) && 
-           f.previousElementSibling && f.previousElementSibling.innerText.includes(tipoDia)) {
-             // Este selector busca la fila de la comida que está justo debajo del total del tipo de día
+    // 1. OBTENER OBJETIVOS ESPECÍFICOS
+    const peso = parseFloat(document.getElementById('peso').value);
+    const genero = document.getElementById('genero').value;
+    const altura = 180; // Estándar si no se lee
+    const edad = 34;
+    const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
+    
+    const mults = {
+        'Alta': parseFloat(document.getElementById('multAlta').value),
+        'Media': parseFloat(document.getElementById('multMedia').value),
+        'Baja': parseFloat(document.getElementById('multBaja').value)
+    };
+    
+    const ratiosMacros = { 'Alta': {p:2, g:1.1}, 'Media': {p:1.7, g:1.1}, 'Baja': {p:1.4, g:0.7} };
+
+    let bmr = (genero === 'hombre') 
+        ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
+        : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
+    
+    const manual = parseFloat(document.getElementById('kcalManual').value);
+    if (!isNaN(manual) && manual > 0) bmr = manual;
+
+    const kcalTotalDia = bmr * mults[tipoDia] * ajuste;
+    const protTotalDia = peso * ratiosMacros[tipoDia].p;
+    const grasaTotalDia = peso * ratiosMacros[tipoDia].g;
+    const chTotalDia = (kcalTotalDia - (protTotalDia * 4) - (grasaTotalDia * 9)) / 4;
+
+    const obj = {
+        p: protTotalDia * REPARTOS[comida].p,
+        g: grasaTotalDia * REPARTOS[comida].g,
+        ch: chTotalDia * REPARTOS[comida].ch
+    };
+
+    // 2. SOLVER (Cálculo de gramos)
+    let gramos = ingredientesElegidos.map(() => 50);
+    // Definimos las variables fuera de los bucles para evitar el error de "not defined"
+    let cP = 0, cG = 0, cCH = 0;
+
+    for(let i=0; i<2000; i++) {
+        cP = 0; cG = 0; cCH = 0;
+        ingredientesElegidos.forEach((al, idx) => {
+            cP += (al.p * gramos[idx] / 100);
+            cG += (al.g * gramos[idx] / 100);
+            cCH += (al.ch * gramos[idx] / 100);
+        });
+
+        ingredientesElegidos.forEach((al, idx) => {
+            let diff = 0;
+            // Ajuste basado en el nutriente principal del alimento
+            if (al.p > al.ch && al.p > al.g) diff = (obj.p - cP) * 0.2;
+            else if (al.g > al.p && al.g > al.ch) diff = (obj.g - cG) * 0.2;
+            else diff = (obj.ch - cCH) * 0.2;
+            
+            gramos[idx] = Math.max(0, gramos[idx] + diff);
+        });
+    }
+
+    // 3. RENDERIZAR RESULTADO
+    let res = `
+        <div class="receta-box">
+            <h3>${comida.toUpperCase()} - Día ${tipoDia}</h3>
+            <p style="font-size:0.85rem; color:#555;">Objetivo: P:${obj.p.toFixed(1)}g | G:${obj.g.toFixed(1)}g | CH:${obj.ch.toFixed(1)}g</p>
+            <ul style="font-size:1.1rem; border-top:1px solid #acc; padding-top:10px; margin-top:10px;">
+    `;
+    
+    ingredientesElegidos.forEach((al, i) => {
+        if(gramos[i] > 1) {
+            res += `<li><strong>${Math.round(gramos[i])}g</strong> de ${al.nombre}</li>`;
         }
     });
+
+    res += `
+            </ul>
+            <div style="font-size:0.75rem; color:#666; margin-top:10px; border-top:1px dashed #ccc; padding-top:5px;">
+                Cálculo final: P:${cP.toFixed(1)} | G:${cG.toFixed(1)} | CH:${cCH.toFixed(1)}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('objetivoComidaDetalle').innerHTML = res;
+    document.getElementById('objetivoComidaDetalle').scrollIntoView({ behavior: 'smooth' });
+};
 
     // Forma más segura de obtener el objetivo: Recalcularlo igual que en la tabla
     const peso = parseFloat(document.getElementById('peso').value);
