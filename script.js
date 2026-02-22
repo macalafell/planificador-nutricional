@@ -4,7 +4,7 @@
  */
 
 // 1. CONFIGURACIÓN INICIAL (URL REAL DE MIQUEL)
-const URL_GOOGLE_SHEET = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSC-tV7twQSz6BF_y88Q9FfRPc5k1EWzAqTnHmrXtY2vbzzaer88gHpiIRF-c8WCCCAF_iiCcOWoQHg/pub?gid=0&single=true&output=csv'; 
+const URL_GOOGLE_SHEET = 'alimentos.csv'; 
 
 let baseDatosAlimentos = [];
 const repartos = {
@@ -17,13 +17,13 @@ const repartos = {
 // 2. CARGA AUTOMÁTICA DESDE GOOGLE DRIVE
 window.onload = function() {
     fetch(URL_GOOGLE_SHEET)
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error("No se pudo encontrar el archivo alimentos.csv");
+            return response.text();
+        })
         .then(data => {
-            // Limpieza de datos: dividimos por líneas y eliminamos espacios en blanco
             const lineas = data.split(/\r?\n/).filter(linea => linea.trim() !== "");
-            
             baseDatosAlimentos = lineas.slice(1).map(linea => {
-                // Separamos por comas, manejando posibles espacios
                 const columnas = linea.split(',').map(col => col.trim());
                 if(columnas.length >= 5) {
                     return { 
@@ -36,16 +36,12 @@ window.onload = function() {
                 }
             }).filter(a => a && !isNaN(a.kcal));
 
-            if (baseDatosAlimentos.length > 0) {
-                document.getElementById('statusCsv').innerText = `✅ Conectado a Drive: ${baseDatosAlimentos.length} alimentos cargados.`;
-                document.getElementById('diseñador').style.display = 'block';
-                generarSelectorAlimentos();
-            } else {
-                document.getElementById('statusCsv').innerText = "⚠️ El archivo está vacío o tiene un formato incorrecto.";
-            }
+            document.getElementById('statusCsv').innerText = `✅ Alimentos cargados desde GitHub: ${baseDatosAlimentos.length}`;
+            document.getElementById('diseñador').style.display = 'block';
+            generarSelectorAlimentos();
         })
         .catch(err => {
-            document.getElementById('statusCsv').innerText = "❌ Error de red al conectar con Google Sheets.";
+            document.getElementById('statusCsv').innerText = "❌ Error: Asegúrate de que el archivo se llama 'alimentos.csv' y está en GitHub.";
             console.error(err);
         });
 };
