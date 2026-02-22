@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador Nutricional Miquel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Planificador Nutricional Científico</h1>
+
+        <section id="perfil">
+            <h2>1. Perfil y Datos Base</h2>
+            <div class="grid">
+                <label>Género: 
+                    <select id="genero">
+                        <option value="hombre">Hombre</option>
+                        <option value="mujer">Mujer</option>
+                    </select>
+                </label>
+                <label>Peso (kg): <input type="number" id="peso" value="70"></label>
+                <label>Altura (cm): <input type="number" id="altura" value="175"></label>
+                <label>Edad: <input type="number" id="edad" value="34"></label>
+            </div>
+            <div class="manual-kcal">
+                <label>Kcal Basales Manuales (opcional): 
+                    <input type="number" id="kcalManual" placeholder="Dejar vacío para auto-calcular">
+                </label>
+            </div>
+        </section>
+
+        <section id="actividad">
+            <h2>2. Intensidad y Ajustes</h2>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+                Define los multiplicadores para cada tipo de día según tu actividad física.
+            </p>
+            <div class="grid">
+                <label>Alta (Mult): <input type="number" id="multAlta" value="1.6" step="0.01"></label>
+                <label>Media (Mult): <input type="number" id="multMedia" value="1.55" step="0.01"></label>
+                <label>Baja (Mult): <input type="number" id="multBaja" value="1.5" step="0.01"></label>
+            </div>
+            <div style="margin-top: 20px;">
+                <label>Objetivo de Ajuste Kcal: <span id="valAjuste" style="font-weight: bold; color: #e74c3c;">0%</span></label>
+                <input type="range" id="ajuste" min="-20" max="20" value="0" style="width: 100%;">
+                <small>(-20% Déficit / +20% Superávit)</small>
+            </div>
+        </section>
+
+        <button onclick="calcularObjetivos()" style="margin-bottom: 20px;">Calcular Objetivos Diarios</button>
+
+        <section id="resultados" style="display:none;">
+            <h2>3. Resumen de Objetivos Diarios</h2>
+            <div id="tablaResumen"></div>
+        </section>
+
+        <section id="alimentos-section">
+            <h2>4. Estado de la Sincronización</h2>
+            <div id="statusCsv" class="status-box">
+                Conectando con tu base de datos en Google Sheets...
+            </div>
+            <p style="font-size: 0.8em; color: #666;">
+                *Para añadir alimentos, edita tu Google Sheet y refresca esta página.
+            </p>
+        </section>
+
+        <section id="diseñador" style="display:none;">
+            <h2>5. Diseñar Comida</h2>
+            <div class="grid">
+                <label>Selecciona Comida:
+                    <select id="comidaSeleccionada">
+                        <option value="desayuno">Desayuno</option>
+                        <option value="comida">Comida</option>
+                        <option value="merienda">Merienda</option>
+                        <option
