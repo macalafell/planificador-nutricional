@@ -1,9 +1,10 @@
 /**
- * LÓGICA FINAL - PLANIFICADOR MIQUEL
+ * LÓGICA DE CÁLCULO - VERSIÓN DE PRODUCCIÓN
  */
 
 let baseDatosAlimentos = [];
 
+// Porcentajes de reparto por comida (Horeca/Deportista)
 const REPARTOS = {
     desayuno: { p: 0.10, g: 0.10, ch: 0.27 },
     comida:   { p: 0.39, g: 0.40, ch: 0.26 },
@@ -12,9 +13,9 @@ const REPARTOS = {
 };
 
 window.onload = function() {
-    cargarDatos();
+    cargarDatosCSV();
     
-    // Configurar el slider para que se mueva el porcentaje visual
+    // Actualización visual del slider
     const slider = document.getElementById('ajuste');
     if(slider) {
         slider.oninput = function() {
@@ -23,10 +24,10 @@ window.onload = function() {
     }
 };
 
-async function cargarDatos() {
+async function cargarDatosCSV() {
     const statusDiv = document.getElementById('statusCsv');
     try {
-        // Usamos una marca de tiempo para evitar la caché de Brave
+        // Forzamos descarga fresca del CSV
         const respuesta = await fetch('alimentos.csv?v=' + Date.now());
         const texto = await respuesta.text();
         
@@ -49,10 +50,10 @@ async function cargarDatos() {
         if (baseDatosAlimentos.length > 0) {
             statusDiv.innerHTML = `✅ <strong>${baseDatosAlimentos.length}</strong> alimentos cargados correctamente.`;
             document.getElementById('diseñador').style.display = 'block';
-            renderizarSelector();
+            generarChecksAlimentos();
         }
     } catch (e) {
-        statusDiv.innerHTML = "❌ Error al cargar alimentos.csv";
+        statusDiv.innerHTML = "❌ Error: No se pudo leer alimentos.csv";
     }
 }
 
@@ -63,7 +64,7 @@ function calcularObjetivos() {
     const genero = document.getElementById('genero').value;
     const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
 
-    // Harris-Benedict
+    // Harris-Benedict (Gasto basal)
     let bmr = (genero === 'hombre') 
         ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
@@ -77,14 +78,7 @@ function calcularObjetivos() {
         { id: 'Baja', m: parseFloat(document.getElementById('multBaja').value), p: 1.4, g: 0.7 }
     ];
 
-    let tabla = `<table style="width:100%; border-collapse:collapse; margin-top:10px;">
-        <tr style="background:#eee;">
-            <th style="padding:8px; border:1px solid #ccc;">Día</th>
-            <th style="padding:8px; border:1px solid #ccc;">Kcal</th>
-            <th style="padding:8px; border:1px solid #ccc;">P</th>
-            <th style="padding:8px; border:1px solid #ccc;">G</th>
-            <th style="padding:8px; border:1px solid #ccc;">CH</th>
-        </tr>`;
+    let tabla = `<table><tr><th>Día</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
     
     intensidades.forEach(d => {
         const kcalTotal = bmr * d.m * ajuste;
@@ -93,11 +87,11 @@ function calcularObjetivos() {
         const chG = (kcalTotal - (pG * 4) - (gG * 9)) / 4;
 
         tabla += `<tr>
-            <td style="padding:8px; border:1px solid #ccc;"><strong>${d.id}</strong></td>
-            <td style="padding:8px; border:1px solid #ccc;">${Math.round(kcalTotal)}</td>
-            <td style="padding:8px; border:1px solid #ccc;">${Math.round(pG)}g</td>
-            <td style="padding:8px; border:1px solid #ccc;">${Math.round(gG)}g</td>
-            <td style="padding:8px; border:1px solid #ccc;">${Math.round(chG)}g</td>
+            <td><strong>${d.id}</strong></td>
+            <td>${Math.round(kcalTotal)}</td>
+            <td>${Math.round(pG)}</td>
+            <td>${Math.round(gG)}</td>
+            <td>${Math.round(chG)}</td>
         </tr>`;
     });
     
@@ -106,13 +100,13 @@ function calcularObjetivos() {
     document.getElementById('resultados').style.display = 'block';
 }
 
-function renderizarSelector() {
+function generarChecksAlimentos() {
     const contenedor = document.getElementById('selectorAlimentos');
-    let html = '<h3>Selecciona ingredientes:</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">';
+    let html = '<h3>Ingredientes disponibles:</h3><div class="grid-checks">';
     
     baseDatosAlimentos.forEach((al, idx) => {
         html += `
-            <label style="background:#f9f9f9; padding:8px; border-radius:5px; border:1px solid #ddd; cursor:pointer; font-size:14px;">
+            <label class="check-item">
                 <input type="checkbox" value="${idx}" class="item-check"> ${al.nombre}
             </label>`;
     });
@@ -121,21 +115,23 @@ function renderizarSelector() {
     contenedor.innerHTML = html;
 }
 
+// Escuchar el botón de calcular receta
 document.addEventListener('click', function(e) {
     if(e.target && e.target.id === 'btnCalcular') {
-        procesarReceta();
+        ejecutarSolverReceta();
     }
 });
 
-function procesarReceta() {
+function ejecutarSolverReceta() {
     const comida = document.getElementById('comidaSeleccionada').value;
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
     const filas = document.querySelectorAll('#tablaResumen tr');
-    let objetivo = null;
+    let obj = null;
 
+    // Extraer objetivo de la tabla generada
     filas.forEach(f => {
         if(f.cells[0].innerText.includes(tipoDia)) {
-            objetivo = {
+            obj = {
                 p: parseFloat(f.cells[2].innerText) * REPARTOS[comida].p,
                 g: parseFloat(f.cells[3].innerText) * REPARTOS[comida].g,
                 ch: parseFloat(f.cells[4].innerText) * REPARTOS[comida].ch
@@ -143,35 +139,36 @@ function procesarReceta() {
         }
     });
 
-    if(!objetivo) return alert("Primero calcula los objetivos diarios.");
+    if(!obj) return alert("Primero pulsa 'Calcular Objetivos Diarios'");
 
-    const checks = document.querySelectorAll('.item-check:checked');
-    const elegidos = Array.from(checks).map(c => baseDatosAlimentos[c.value]);
+    const seleccionados = Array.from(document.querySelectorAll('.item-check:checked'))
+                               .map(c => baseDatosAlimentos[c.value]);
 
-    if(elegidos.length === 0) return alert("Selecciona al menos un alimento.");
+    if(seleccionados.length === 0) return alert("Selecciona algún alimento");
 
-    // Solver simple de 3 variables
-    let gramos = elegidos.map(() => 100);
-    for(let i=0; i<500; i++) {
-        let curP = 0, curG = 0, curCH = 0;
-        elegidos.forEach((al, idx) => {
-            curP += (al.p * gramos[idx] / 100);
-            curG += (al.g * gramos[idx] / 100);
-            curCH += (al.ch * gramos[idx] / 100);
+    // Lógica de ajuste de gramos (Solver)
+    let gramos = seleccionados.map(() => 100);
+    for(let i=0; i<1000; i++) {
+        let cP = 0, cG = 0, cCH = 0;
+        seleccionados.forEach((al, idx) => {
+            cP += (al.p * gramos[idx] / 100);
+            cG += (al.g * gramos[idx] / 100);
+            cCH += (al.ch * gramos[idx] / 100);
         });
 
-        elegidos.forEach((al, idx) => {
-            let diff = 0;
-            if (al.p > al.ch && al.p > al.g) diff = (objetivo.p - curP) * 0.2;
-            else if (al.g > al.p && al.g > al.ch) diff = (objetivo.g - curG) * 0.2;
-            else if (al.ch > al.p && al.ch > al.g) diff = (objetivo.ch - curCH) * 0.2;
-            gramos[idx] = Math.max(0, gramos[idx] + diff);
+        seleccionados.forEach((al, idx) => {
+            let error = 0;
+            if (al.p > al.ch && al.p > al.g) error = (obj.p - cP) * 0.1;
+            else if (al.g > al.p && al.g > al.ch) error = (obj.g - cG) * 0.1;
+            else if (al.ch > al.p && al.ch > al.g) error = (obj.ch - cCH) * 0.1;
+            gramos[idx] = Math.max(0, gramos[idx] + error);
         });
     }
 
-    let resHTML = `<div style="background:#e8f4fd; padding:15px; border-radius:8px; margin-top:10px;">
+    // Mostrar resultado final
+    let resHTML = `<div class="receta-box">
         <h4>Cantidades para tu ${comida}:</h4><ul>`;
-    elegidos.forEach((al, i) => {
+    seleccionados.forEach((al, i) => {
         resHTML += `<li><strong>${Math.round(gramos[i])}g</strong> de ${al.nombre}</li>`;
     });
     resHTML += `</ul></div>`;
