@@ -113,8 +113,19 @@
                     </div>
                 </div>
 
-                <div id="selectorAlimentos">
-                    </div>
+               <div id="selectorAlimentos" style="margin-top:20px;">
+    <label>Buscar y añadir ingrediente:</label>
+    <div style="display: flex; gap: 10px;">
+        <input list="listaIngredientes" id="buscadorIngrediente" placeholder="Escribe para buscar...">
+        <datalist id="listaIngredientes"></datalist>
+        <button onclick="añadirAlimentoLista()" style="width: auto; margin-top: 0; background: #3498db;">Añadir</button>
+    </div>
+    
+    <div id="listaSeleccionados" style="margin-top: 15px;">
+        <p style="font-size: 0.9rem; color: #666;">Ingredientes en esta receta:</p>
+        <ul id="ulSeleccionados" style="list-style: none; padding: 0;"></ul>
+    </div>
+</div>
 
                 <button id="btnCalcular">CALCULAR RECETA EXACTA</button>
 
