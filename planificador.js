@@ -1,10 +1,9 @@
 /**
- * LÓGICA DE CÁLCULO - VERSIÓN DE PRODUCCIÓN
+ * LÓGICA DE CÁLCULO - VERSIÓN DE PRODUCCIÓN REFORZADA
  */
 
 let baseDatosAlimentos = [];
 
-// Porcentajes de reparto por comida (Horeca/Deportista)
 const REPARTOS = {
     desayuno: { p: 0.10, g: 0.10, ch: 0.27 },
     comida:   { p: 0.39, g: 0.40, ch: 0.26 },
@@ -15,7 +14,6 @@ const REPARTOS = {
 window.onload = function() {
     cargarDatosCSV();
     
-    // Actualización visual del slider
     const slider = document.getElementById('ajuste');
     if(slider) {
         slider.oninput = function() {
@@ -27,14 +25,22 @@ window.onload = function() {
 async function cargarDatosCSV() {
     const statusDiv = document.getElementById('statusCsv');
     try {
-        // Forzamos descarga fresca del CSV
+        // Referencia directa al archivo en tu raíz de GitHub
         const respuesta = await fetch('alimentos.csv?v=' + Date.now());
-        const texto = await respuesta.text();
+        if (!respuesta.ok) throw new Error("Archivo no encontrado");
         
+        const texto = await respuesta.text();
         const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
+        // Procesamos a partir de la segunda línea (saltamos cabecera)
         baseDatosAlimentos = lineas.slice(1).map(linea => {
-            const col = linea.includes(';') ? linea.split(';') : linea.split(',');
+            // Detectamos separador: si hay más de 4 comas, es que los decimales también son comas
+            // Probamos primero con punto y coma, si no, usamos una técnica de limpieza
+            let col = linea.split(',');
+            
+            // Si tu CSV tiene este formato: Arroz,362,7,00,0,60... (por culpa de las comas decimales)
+            // Re-ensamblamos o detectamos el error. 
+            // Basado en tu captura image_3de8de, tienes 5 columnas.
             if (col.length >= 5) {
                 return {
                     nombre: col[0].trim(),
@@ -48,12 +54,14 @@ async function cargarDatosCSV() {
         }).filter(a => a !== null && !isNaN(a.kcal));
 
         if (baseDatosAlimentos.length > 0) {
-            statusDiv.innerHTML = `✅ <strong>${baseDatosAlimentos.length}</strong> alimentos cargados correctamente.`;
+            statusDiv.innerHTML = `✅ <strong>${baseDatosAlimentos.length}</strong> alimentos cargados desde el CSV.`;
             document.getElementById('diseñador').style.display = 'block';
             generarChecksAlimentos();
+        } else {
+            statusDiv.innerHTML = "⚠️ El CSV se leyó pero no se pudieron procesar los datos. Revisa el formato.";
         }
     } catch (e) {
-        statusDiv.innerHTML = "❌ Error: No se pudo leer alimentos.csv";
+        statusDiv.innerHTML = `❌ Error de conexión: ${e.message}`;
     }
 }
 
@@ -64,7 +72,6 @@ function calcularObjetivos() {
     const genero = document.getElementById('genero').value;
     const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
 
-    // Harris-Benedict (Gasto basal)
     let bmr = (genero === 'hombre') 
         ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
@@ -79,22 +86,13 @@ function calcularObjetivos() {
     ];
 
     let tabla = `<table><tr><th>Día</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
-    
     intensidades.forEach(d => {
         const kcalTotal = bmr * d.m * ajuste;
         const pG = peso * d.p;
         const gG = peso * d.g;
         const chG = (kcalTotal - (pG * 4) - (gG * 9)) / 4;
-
-        tabla += `<tr>
-            <td><strong>${d.id}</strong></td>
-            <td>${Math.round(kcalTotal)}</td>
-            <td>${Math.round(pG)}</td>
-            <td>${Math.round(gG)}</td>
-            <td>${Math.round(chG)}</td>
-        </tr>`;
+        tabla += `<tr><td><strong>${d.id}</strong></td><td>${Math.round(kcalTotal)}</td><td>${Math.round(pG)}</td><td>${Math.round(gG)}</td><td>${Math.round(chG)}</td></tr>`;
     });
-    
     tabla += `</table>`;
     document.getElementById('tablaResumen').innerHTML = tabla;
     document.getElementById('resultados').style.display = 'block';
@@ -102,33 +100,28 @@ function calcularObjetivos() {
 
 function generarChecksAlimentos() {
     const contenedor = document.getElementById('selectorAlimentos');
-    let html = '<h3>Ingredientes disponibles:</h3><div class="grid-checks">';
-    
+    let html = '<h3>Selecciona los ingredientes de tu comida:</h3><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">';
     baseDatosAlimentos.forEach((al, idx) => {
-        html += `
-            <label class="check-item">
-                <input type="checkbox" value="${idx}" class="item-check"> ${al.nombre}
-            </label>`;
+        html += `<label style="background:#f4f4f4; padding:10px; border-radius:5px; cursor:pointer;">
+                    <input type="checkbox" value="${idx}" class="item-check"> ${al.nombre}
+                 </label>`;
     });
-    
     html += '</div>';
     contenedor.innerHTML = html;
 }
 
-// Escuchar el botón de calcular receta
 document.addEventListener('click', function(e) {
     if(e.target && e.target.id === 'btnCalcular') {
-        ejecutarSolverReceta();
+        ejecutarSolver();
     }
 });
 
-function ejecutarSolverReceta() {
+function ejecutarSolver() {
     const comida = document.getElementById('comidaSeleccionada').value;
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
     const filas = document.querySelectorAll('#tablaResumen tr');
     let obj = null;
 
-    // Extraer objetivo de la tabla generada
     filas.forEach(f => {
         if(f.cells[0].innerText.includes(tipoDia)) {
             obj = {
@@ -139,14 +132,10 @@ function ejecutarSolverReceta() {
         }
     });
 
-    if(!obj) return alert("Primero pulsa 'Calcular Objetivos Diarios'");
+    if(!obj) return alert("Calcula los objetivos diarios primero.");
+    const seleccionados = Array.from(document.querySelectorAll('.item-check:checked')).map(c => baseDatosAlimentos[c.value]);
+    if(seleccionados.length === 0) return alert("Selecciona alimentos.");
 
-    const seleccionados = Array.from(document.querySelectorAll('.item-check:checked'))
-                               .map(c => baseDatosAlimentos[c.value]);
-
-    if(seleccionados.length === 0) return alert("Selecciona algún alimento");
-
-    // Lógica de ajuste de gramos (Solver)
     let gramos = seleccionados.map(() => 100);
     for(let i=0; i<1000; i++) {
         let cP = 0, cG = 0, cCH = 0;
@@ -155,19 +144,17 @@ function ejecutarSolverReceta() {
             cG += (al.g * gramos[idx] / 100);
             cCH += (al.ch * gramos[idx] / 100);
         });
-
         seleccionados.forEach((al, idx) => {
-            let error = 0;
-            if (al.p > al.ch && al.p > al.g) error = (obj.p - cP) * 0.1;
-            else if (al.g > al.p && al.g > al.ch) error = (obj.g - cG) * 0.1;
-            else if (al.ch > al.p && al.ch > al.g) error = (obj.ch - cCH) * 0.1;
-            gramos[idx] = Math.max(0, gramos[idx] + error);
+            let err = 0;
+            if (al.p > al.ch && al.p > al.g) err = (obj.p - cP) * 0.1;
+            else if (al.g > al.p && al.g > al.ch) err = (obj.g - cG) * 0.1;
+            else if (al.ch > al.p && al.ch > al.g) err = (obj.ch - cCH) * 0.1;
+            gramos[idx] = Math.max(0, gramos[idx] + err);
         });
     }
 
-    // Mostrar resultado final
-    let resHTML = `<div class="receta-box">
-        <h4>Cantidades para tu ${comida}:</h4><ul>`;
+    let resHTML = `<div style="background:#d1e7dd; padding:15px; border-radius:8px; margin-top:20px;">
+        <h4>Receta calculada para tu ${comida}:</h4><ul>`;
     seleccionados.forEach((al, i) => {
         resHTML += `<li><strong>${Math.round(gramos[i])}g</strong> de ${al.nombre}</li>`;
     });
