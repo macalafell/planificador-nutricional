@@ -3,8 +3,8 @@
  * Lógica: Harris-Benedict + Reparto Horeca + Solver de Macros
  */
 
-// 1. CONFIGURACIÓN INICIAL
-const URL_GOOGLE_SHEET = 'TU_URL_AQUÍ_DE_GOOGLE_SHEETS'; 
+// 1. CONFIGURACIÓN INICIAL (URL REAL DE MIQUEL)
+const URL_GOOGLE_SHEET = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSC-tV7twQSz6BF_y88Q9FfRPc5k1EWzAqTnHmrXtY2vbzzaer88gHpiIRF-c8WCCCAF_iiCcOWoQHg/pub?gid=0&single=true&output=csv'; 
 
 let baseDatosAlimentos = [];
 const repartos = {
@@ -16,20 +16,18 @@ const repartos = {
 
 // 2. CARGA AUTOMÁTICA DESDE GOOGLE DRIVE
 window.onload = function() {
-    if (URL_GOOGLE_SHEET === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSC-tV7twQSz6BF_y88Q9FfRPc5k1EWzAqTnHmrXtY2vbzzaer88gHpiIRF-c8WCCCAF_iiCcOWoQHg/pub?gid=0&single=true&output=csv') {
-        document.getElementById('statusCsv').innerText = "⚠️ Configura la URL de Google Sheets en script.js";
-        return;
-    }
-
     fetch(URL_GOOGLE_SHEET)
         .then(response => response.text())
         .then(data => {
-            const lineas = data.split('\n');
+            // Limpieza de datos: dividimos por líneas y eliminamos espacios en blanco
+            const lineas = data.split(/\r?\n/).filter(linea => linea.trim() !== "");
+            
             baseDatosAlimentos = lineas.slice(1).map(linea => {
-                const columnas = linea.split(',');
+                // Separamos por comas, manejando posibles espacios
+                const columnas = linea.split(',').map(col => col.trim());
                 if(columnas.length >= 5) {
                     return { 
-                        nombre: columnas[0].trim(), 
+                        nombre: columnas[0], 
                         kcal: parseFloat(columnas[1]), 
                         p: parseFloat(columnas[2]), 
                         g: parseFloat(columnas[3]), 
@@ -38,17 +36,21 @@ window.onload = function() {
                 }
             }).filter(a => a && !isNaN(a.kcal));
 
-            document.getElementById('statusCsv').innerText = `✅ Conectado a Drive: ${baseDatosAlimentos.length} alimentos listos.`;
-            document.getElementById('diseñador').style.display = 'block';
-            generarSelectorAlimentos();
+            if (baseDatosAlimentos.length > 0) {
+                document.getElementById('statusCsv').innerText = `✅ Conectado a Drive: ${baseDatosAlimentos.length} alimentos cargados.`;
+                document.getElementById('diseñador').style.display = 'block';
+                generarSelectorAlimentos();
+            } else {
+                document.getElementById('statusCsv').innerText = "⚠️ El archivo está vacío o tiene un formato incorrecto.";
+            }
         })
         .catch(err => {
-            document.getElementById('statusCsv').innerText = "❌ Error de conexión con Google Sheets.";
+            document.getElementById('statusCsv').innerText = "❌ Error de red al conectar con Google Sheets.";
             console.error(err);
         });
 };
 
-// 3. CÁLCULOS DE OBJETIVOS DIARIOS (PUNTOS 1 AL 6)
+// 3. CÁLCULOS DE OBJETIVOS DIARIOS
 function calcularObjetivos() {
     const genero = document.getElementById('genero').value;
     const peso = parseFloat(document.getElementById('peso').value);
@@ -68,9 +70,9 @@ function calcularObjetivos() {
     }
 
     const intensidades = [
-        { nombre: 'Alta', mult: parseFloat(document.getElementById('multAlta').value), gP: 1.4, gG: 0.7 },
+        { nombre: 'Alta', mult: parseFloat(document.getElementById('multAlta').value), gP: 2.0, gG: 1.1 },
         { nombre: 'Media', mult: parseFloat(document.getElementById('multMedia').value), gP: 1.7, gG: 1.1 },
-        { nombre: 'Baja', mult: parseFloat(document.getElementById('multBaja').value), gP: 2.0, gG: 1.5 }
+        { nombre: 'Baja', mult: parseFloat(document.getElementById('multBaja').value), gP: 1.4, gG: 0.7 }
     ];
 
     let html = `<table><tr><th>Día</th><th>Kcal</th><th>Prot (g)</th><th>Grasa (g)</th><th>CH (g)</th></tr>`;
@@ -83,7 +85,7 @@ function calcularObjetivos() {
         const grCH = kcalRestantes / 4;
 
         html += `<tr>
-            <td>${dia.nombre}</td>
+            <td><strong>${dia.nombre}</strong></td>
             <td>${Math.round(kcalDia)}</td>
             <td>${Math.round(grProt)}</td>
             <td>${Math.round(grGrasa)}</td>
@@ -96,11 +98,11 @@ function calcularObjetivos() {
     document.getElementById('resultados').style.display = 'block';
 }
 
-// 4. DISEÑADOR DE COMIDAS Y ALGORITMO "SOLVER" (PUNTOS 11 AL 13)
+// 4. DISEÑADOR DE COMIDAS Y ALGORITMO "SOLVER"
 function generarSelectorAlimentos() {
-    let html = '<h3>Selecciona ingredientes:</h3><div class="grid">';
+    let html = '<h3>Selecciona ingredientes de tu despensa:</h3><div class="alimentos-grid">';
     baseDatosAlimentos.forEach((al, i) => {
-        html += `<label><input type="checkbox" value="${i}" class="alimento-check"> ${al.nombre}</label>`;
+        html += `<label class="alimento-item"><input type="checkbox" value="${i}" class="alimento-check"> ${al.nombre}</label>`;
     });
     html += '</div>';
     document.getElementById('selectorAlimentos').innerHTML = html;
@@ -109,13 +111,12 @@ function generarSelectorAlimentos() {
 document.getElementById('btnCalcular').addEventListener('click', function() {
     const comida = document.getElementById('comidaSeleccionada').value;
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
-
+    
     const filaDia = Array.from(document.querySelectorAll('#tablaResumen tr'))
                          .find(tr => tr.cells[0].innerText === tipoDia);
+    
+    if(!filaDia) return alert("Primero pulsa el botón 'Calcular Objetivos Diarios'.");
 
-    if(!filaDia) return alert("Primero calcula los objetivos diarios.");
-
-    // Objetivos específicos de la comida
     const target = {
         p: parseFloat(filaDia.cells[2].innerText) * repartos[comida].p,
         g: parseFloat(filaDia.cells[3].innerText) * repartos[comida].g,
@@ -125,23 +126,22 @@ document.getElementById('btnCalcular').addEventListener('click', function() {
 
     const seleccionados = Array.from(document.querySelectorAll('.alimento-check:checked'))
                                .map(el => baseDatosAlimentos[parseInt(el.value)]);
+    
+    if (seleccionados.length === 0) return alert("Selecciona los alimentos que vas a usar en esta comida.");
 
-    if (seleccionados.length === 0) return alert("Elige al menos un alimento.");
-
-    // SOLVER: Ajuste iterativo de gramos
+    // SOLVER: Ajuste de gramos para minimizar el error (<2%)
     let gramos = seleccionados.map(() => 100); 
-    for(let i=0; i<200; i++) {
+    for(let i=0; i<300; i++) {
         let actualP = seleccionados.reduce((acc, al, idx) => acc + (al.p * gramos[idx]/100), 0);
         let actualG = seleccionados.reduce((acc, al, idx) => acc + (al.g * gramos[idx]/100), 0);
         let actualCH = seleccionados.reduce((acc, al, idx) => acc + (al.ch * gramos[idx]/100), 0);
 
         seleccionados.forEach((al, idx) => {
-            // Ajuste basado en el macro dominante del alimento
-            if (al.p > al.ch && al.p > al.g) gramos[idx] += (target.p - actualP) * 0.4;
-            else if (al.g > al.p && al.g > al.ch) gramos[idx] += (target.g - actualG) * 0.4;
-            else if (al.ch > al.p && al.ch > al.g) gramos[idx] += (target.ch - actualCH) * 0.4;
-            else gramos[idx] += (target.kcal - (actualP*4 + actualG*9 + actualCH*4)) / 50; 
-
+            if (al.p > al.ch && al.p > al.g) gramos[idx] += (target.p - actualP) * 0.3;
+            else if (al.g > al.p && al.g > al.ch) gramos[idx] += (target.g - actualG) * 0.3;
+            else if (al.ch > al.p && al.ch > al.g) gramos[idx] += (target.ch - actualCH) * 0.3;
+            else gramos[idx] += (target.kcal - (actualP*4 + actualG*9 + actualCH*4)) / 100; 
+            
             if (gramos[idx] < 0) gramos[idx] = 0;
         });
     }
@@ -150,19 +150,43 @@ document.getElementById('btnCalcular').addEventListener('click', function() {
 });
 
 function mostrarResultadosFinales(alimentos, gramos, target) {
-    let resHtml = `<h3>Receta Calculada:</h3><ul>`;
+    let resHtml = `<h3>Tu Receta Calculada:</h3><ul class="lista-receta">`;
     let totP = 0, totG = 0, totCH = 0;
 
     alimentos.forEach((al, i) => {
         let g = Math.round(gramos[i]);
-        resHtml += `<li><strong>${al.nombre}:</strong> ${g}g</li>`;
+        resHtml += `<li><strong>${g}g</strong> de ${al.nombre}</li>`;
         totP += (al.p * g/100); totG += (al.g * g/100); totCH += (al.ch * g/100);
     });
-
+    
     const totKcal = (totP * 4) + (totG * 9) + (totCH * 4);
     const error = Math.abs(((totKcal - target.kcal) / target.kcal) * 100).toFixed(2);
 
     resHtml += `</ul><div class="resumen-final">
-        <p>Kcal: ${Math.round(totKcal)} / Obj: ${Math.round(target.kcal)}</p>
-        <p>Desviación: ${error}% ${error <= 2 ? '✅' : '⚠️'}</p>
-        <button onclick="exportarReceta()">Exportar
+        <p><strong>Total:</strong> ${Math.round(totKcal)} kcal (Objetivo: ${Math.round(target.kcal)})</p>
+        <p><strong>Ajuste:</strong> ${error}% ${error <= 2 ? '✅' : '⚠️'}</p>
+        <button onclick="exportarReceta()" style="background: #3498db;">Descargar Receta (CSV)</button>
+    </div>`;
+
+    document.getElementById('objetivoComidaDetalle').innerHTML = resHtml;
+}
+
+function exportarReceta() {
+    let csvContent = "data:text/csv;charset=utf-8,Alimento,Gramos\n";
+    const items = document.querySelectorAll('.lista-receta li');
+    items.forEach(li => {
+        const texto = li.innerText;
+        const partes = texto.split(' de ');
+        csvContent += `${partes[1]},${partes[0].replace('g', '')}\n`;
+    });
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `receta_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+}
+
+// Evento para el slider de ajuste
+document.getElementById('ajuste').addEventListener('input', e => {
+    document.getElementById('valAjuste').innerText = e.target.value + '%';
+});
