@@ -24,7 +24,7 @@ window.onload = function() {
         .then(data => {
             const lineas = data.split(/\r?\n/).filter(linea => linea.trim() !== "");
             baseDatosAlimentos = lineas.slice(1).map(linea => {
-                // ESTA LÍNEA ES LA CLAVE: Detecta coma o punto y coma
+                // Detecta coma o punto y coma
                 const columnas = linea.includes(';') ? linea.split(';') : linea.split(',');
                 const cols = columnas.map(col => col.trim().replace(',', '.')); // Cambia comas decimales por puntos
                 
