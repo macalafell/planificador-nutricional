@@ -3,147 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planificador Nutricional - Miquel 1990</title>
+    <title>Planificador Nutricional Científico - Miquel</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --blue: #3498db; --orange: #e67e22; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: var(--primary); background: #f4f7f6; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-top: 0; }
-        section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
-        h2 { font-size: 1.1rem; margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; }
-        
-        /* Botones */
-        .btn-objetivos { width: 100%; padding: 14px; background: var(--orange); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 10px; transition: 0.3s; }
-        .btn-receta { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 10px; transition: 0.3s; }
-        .btn-add { background: var(--blue); color: white; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        
-        /* Tabla de Resultados */
-        .status-box { padding: 10px; background: #e8f4fd; border-left: 4px solid var(--blue); margin-bottom: 15px; font-weight: bold; font-size: 0.9rem; }
-        .table-container { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background: #f8f9fa; color: var(--primary); }
-        tr.dia-total { background: #eefaf3; font-weight: bold; border-top: 2px solid #ccc; }
-        tr.comida-fila { color: #555; font-style: italic; }
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+        }
 
-        /* Buscador e Ingredientes */
-        .search-container { display: flex; gap: 10px; margin: 15px 0; }
-        .search-container input { flex-grow: 1; }
-        .ingredientes-lista { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-        .ingrediente-tag { background: #edf2f7; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; border: 1px solid #cbd5e0; font-size: 0.9rem; }
-        .btn-remove { color: #e53e3e; cursor: pointer; font-weight: bold; margin-left: 8px; }
-        
-        .receta-box { background: #d1e7dd; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 5px solid #0f5132; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-        .receta-box h3 { margin-top: 0; color: #0f5132; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 30px; }
+        h2 { color: var(--accent); font-size: 1.2rem; }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover { background-color: #219150; }
+
+        #statusCsv { font-size: 0.85rem; margin-top: 10px; }
+
+        /* Estilo para la tabla de resultados */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: var(--primary); color: white; }
+        .dia-total { background-color: #e8f5e9; font-weight: bold; }
+
+        /* Tags de ingredientes seleccionados */
+        #ulSeleccionados { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin-top: 10px; }
+        .ingrediente-tag {
+            background: #e1e8ed;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .ingrediente-tag b { margin-left: 8px; color: #e74c3c; cursor: pointer; }
+
+        .receta-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>🍎 SISTEMA DE NUTRICIÓN CIENTÍFICO</h1>
+<div class="container">
+    <h1>Planificador Nutricional 2026</h1>
+    <div id="statusCsv">⌛ Cargando base de datos de alimentos...</div>
 
-        <section>
-            <h2>1. Perfil Biométrico</h2>
-            <div class="grid">
-                <div>
-                    <label>Género</label>
-                    <select id="genero">
-                        <option value="hombre">Hombre</option>
-                        <option value="mujer">Mujer</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Peso (kg)</label>
-                    <input type="number" id="peso" value="75">
-                </div>
-                <div>
-                    <label>Altura (cm)</label>
-                    <input type="number" id="altura" value="180">
-                </div>
-                <div>
-                    <label>Edad</label>
-                    <input type="number" id="edad" value="34">
-                </div>
+    <div class="section">
+        <h2>Paso 1: Perfil y Gasto Diario</h2>
+        <div class="grid">
+            <div class="input-group">
+                <label>Peso (kg)</label>
+                <input type="number" id="peso" value="75" step="0.1">
             </div>
-        </section>
+            <div class="input-group">
+                <label>Altura (cm)</label>
+                <input type="number" id="altura" value="180">
+            </div>
+            <div class="input-group">
+                <label>Edad</label>
+                <input type="number" id="edad" value="34">
+            </div>
+            <div class="input-group">
+                <label>Género</label>
+                <select id="genero">
+                    <option value="hombre">Hombre</option>
+                    <option value="mujer">Mujer</option>
+                </select>
+            </div>
+        </div>
 
-        <section>
-            <h2>2. Actividad y Ajustes</h2>
-            <div class="grid">
-                <div>
-                    <label>Mult. Alta (Trail)</label>
-                    <input type="number" id="multAlta" value="1.6" step="0.05">
-                </div>
-                <div>
-                    <label>Mult. Media</label>
-                    <input type="number" id="multMedia" value="1.45" step="0.05">
-                </div>
-                <div>
-                    <label>Mult. Baja</label>
-                    <input type="number" id="multBaja" value="1.2" step="0.05">
-                </div>
-            </div>
-            <div style="margin-top:15px;">
-                <label>Ajuste Calórico Global: <span id="valAjuste">0%</span></label>
+        <div class="grid">
+            <div class="input-group">
+                <label>Ajuste Kcal (%)</label>
                 <input type="range" id="ajuste" min="-20" max="20" value="0">
+                <span id="valAjuste">0%</span>
             </div>
-            <div style="margin-top:10px;">
-                <label>Kcal fijas (Manual)</label>
+            <div class="input-group">
+                <label>Kcal Manuales (Opcional)</label>
                 <input type="number" id="kcalManual" placeholder="Ej: 2800">
             </div>
-            <button class="btn-objetivos" onclick="calcularObjetivos()">PASO A: CALCULAR GASTO Y DESGLOSE</button>
-        </section>
+        </div>
 
-        <section id="resultados" style="display:none; background: #fffdf0;">
-            <h2>3. Objetivos por Día y Comida</h2>
-            <div class="table-container" id="tablaResumen"></div>
-        </section>
-
-        <section>
-            <h2>4. Planificador de Comida Exacta</h2>
-            <div id="statusCsv" class="status-box">Iniciando base de datos...</div>
-            
-            <div id="diseñador" style="display:none;">
-                <div class="grid" style="margin-bottom: 20px;">
-                    <div>
-                        <label>Seleccionar Día</label>
-                        <select id="tipoDiaSeleccionado">
-                            <option value="Alta">Día Alta Intensidad</option>
-                            <option value="Media">Día Media Intensidad</option>
-                            <option value="Baja">Día Baja Intensidad</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Seleccionar Comida</label>
-                        <select id="comidaSeleccionada">
-                            <option value="desayuno">Desayuno</option>
-                            <option value="comida">Comida</option>
-                            <option value="merienda">Merienda</option>
-                            <option value="cena">Cena</option>
-                        </select>
-                    </div>
-                </div>
-
-                <label>Buscar e incluir ingredientes:</label>
-                <div class="search-container">
-                    <input list="listaIngredientes" id="buscadorIngrediente" placeholder="Escribe para buscar (Arroz, Pavo, Avena...)">
-                    <datalist id="listaIngredientes"></datalist>
-                    <button class="btn-add" onclick="añadirAlimentoLista()">AÑADIR</button>
-                </div>
-
-                <ul id="ulSeleccionados" class="ingredientes-lista"></ul>
-
-                <button class="btn-receta" onclick="ejecutarSolverReceta()">PASO B: GENERAR RECETA CIENTÍFICA</button>
-
-                <div id="objetivoComidaDetalle"></div>
+        <h3>Multiplicadores de Actividad</h3>
+        <div class="grid">
+            <div class="input-group">
+                <label>Alta Intensidad</label>
+                <input type="number" id="multAlta" value="1.6" step="0.05">
             </div>
-        </section>
+            <div class="input-group">
+                <label>Media Intensidad</label>
+                <input type="number" id="multMedia" value="1.45" step="0.05">
+            </div>
+            <div class="input-group">
+                <label>Baja Intensidad</label>
+                <input type="number" id="multBaja" value="1.2" step="0.05">
+            </div>
+        </div>
+
+        <button onclick="calcularObjetivos()">PASO A: CALCULAR OBJETIVOS DIARIOS</button>
+        
+        <div id="resultados" style="display:none;">
+            <h3>Resumen de Objetivos de Macros</h3>
+            <div id="tablaResumen"></div>
+        </div>
     </div>
 
-    <script src="./planificador.js"></script>
+    <div class="section" id="diseñador" style="display:none;">
+        <h2>Paso 2: Generador de Recetas Científico</h2>
+        
+        <div class="grid">
+            <div class="input-group">
+                <label>Seleccionar Comida</label>
+                <select id="comidaSeleccionada">
+                    <option value="desayuno">Desayuno</option>
+                    <option value="comida">Comida</option>
+                    <option value="merienda">Merienda</option>
+                    <option value="cena">Cena</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Tipo de Día</label>
+                <select id="tipoDiaSeleccionado">
+                    <option value="Alta">Alta Intensidad</option>
+                    <option value="Media">Media Intensidad</option>
+                    <option value="Baja">Baja Intensidad</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Añadir Alimentos (Escribe y selecciona)</label>
+            <input type="text" id="buscadorIngrediente" list="listaIngredientes" placeholder="Ej: Avena, Pavo, Arroz...">
+            <datalist id="listaIngredientes"></datalist>
+            <button onclick="añadirAlimentoLista()" style="margin-top:10px; background-color: var(--primary);">Añadir a la Receta</button>
+        </div>
+
+        <div id="ulSeleccionados"></div>
+
+        <div style="margin-top:20px;">
+            <button onclick="ejecutarSolverReceta()" style="width:100%; padding:15px; font-size:1.1rem;">PASO B: GENERAR RECETA EXACTA</button>
+        </div>
+
+        <div id="objetivoComidaDetalle"></div>
+    </div>
+</div>
+
+<script src="planificador.js"></script>
+
 </body>
 </html>
