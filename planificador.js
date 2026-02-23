@@ -1,12 +1,10 @@
 /**
- * PLANIFICADOR NUTRICIONAL MIQUEL - VERSIÓN FINAL CONSOLIDADA
- * Sin errores de scope, blindado contra NaNs y con Solver optimizado.
+ * PLANIFICADOR NUTRICIONAL MIQUEL - VERSIÓN SOLVER ROBUSTO
  */
 
 let baseDatosAlimentos = [];
 let ingredientesElegidos = [];
 
-// Matriz de reparto porcentual por comida
 const REPARTOS = {
     desayuno: { p: 0.10, g: 0.10, ch: 0.27 },
     comida:   { p: 0.39, g: 0.40, ch: 0.26 },
@@ -17,16 +15,9 @@ const REPARTOS = {
 window.onload = function() {
     cargarDatosCSV();
     const slider = document.getElementById('ajuste');
-    if(slider) {
-        slider.oninput = function() { 
-            document.getElementById('valAjuste').innerText = this.value + '%'; 
-        };
-    }
+    if(slider) slider.oninput = function() { document.getElementById('valAjuste').innerText = this.value + '%'; };
 };
 
-/**
- * CARGA DE DATOS DESDE CSV
- */
 async function cargarDatosCSV() {
     const statusDiv = document.getElementById('statusCsv');
     try {
@@ -37,7 +28,12 @@ async function cargarDatosCSV() {
         baseDatosAlimentos = lineas.slice(1).map(linea => {
             const col = linea.split(/[,;\t]/); 
             if (col.length >= 5) {
-                const limpiarNum = (val) => parseFloat(val.replace(',', '.').trim());
+                // Limpieza agresiva de números para evitar NaNs
+                const limpiarNum = (val) => {
+                    if(!val) return 0;
+                    let n = parseFloat(val.toString().replace(',', '.').trim());
+                    return isNaN(n) ? 0 : n;
+                };
                 return { 
                     nombre: col[0].trim(), 
                     kcal: limpiarNum(col[1]), 
@@ -47,16 +43,14 @@ async function cargarDatosCSV() {
                 };
             }
             return null;
-        }).filter(a => a !== null && !isNaN(a.kcal));
+        }).filter(a => a !== null);
 
         if (baseDatosAlimentos.length > 0) {
-            statusDiv.innerHTML = `✅ ${baseDatosAlimentos.length} alimentos cargados.`;
+            statusDiv.innerHTML = `✅ ${baseDatosAlimentos.length} alimentos listos.`;
             document.getElementById('diseñador').style.display = 'block';
             poblarDatalist();
         }
-    } catch (e) { 
-        statusDiv.innerHTML = "❌ Error en la base de datos CSV."; 
-    }
+    } catch (e) { statusDiv.innerHTML = "❌ Error en base de datos."; }
 }
 
 function poblarDatalist() {
@@ -69,31 +63,27 @@ function poblarDatalist() {
     });
 }
 
-/**
- * GESTIÓN DE INGREDIENTES SELECCIONADOS
- */
 window.añadirAlimentoLista = function() {
     const input = document.getElementById('buscadorIngrediente');
-    const nombreSel = input.value.trim().toLowerCase();
-    const al = baseDatosAlimentos.find(a => a.nombre.toLowerCase() === nombreSel);
+    const nombreSel = input.value.trim();
+    // Buscamos coincidencia exacta ignorando mayúsculas
+    const al = baseDatosAlimentos.find(a => a.nombre.toLowerCase() === nombreSel.toLowerCase());
     
-    if (al && !ingredientesElegidos.some(i => i.nombre === al.nombre)) {
-        ingredientesElegidos.push(al);
-        renderizarLista();
+    if (al) {
+        if(!ingredientesElegidos.some(i => i.nombre === al.nombre)) {
+            ingredientesElegidos.push(al);
+            renderizarLista();
+        }
         input.value = "";
-        input.focus();
-    } else if (!al) {
-        alert("Selecciona un alimento válido de la lista.");
+    } else {
+        alert("Alimento no encontrado. Selecciónalo de la lista desplegable.");
     }
 };
 
 function renderizarLista() {
     const ul = document.getElementById('ulSeleccionados');
     ul.innerHTML = ingredientesElegidos.map((al, idx) => `
-        <li class="ingrediente-tag">
-            ${al.nombre} 
-            <span class="btn-remove" onclick="eliminarIngrediente(${idx})">✕</span>
-        </li>
+        <li class="ingrediente-tag">${al.nombre} <span class="btn-remove" onclick="eliminarIngrediente(${idx})">✕</span></li>
     `).join('');
 }
 
@@ -102,9 +92,6 @@ window.eliminarIngrediente = function(idx) {
     renderizarLista(); 
 };
 
-/**
- * PASO A: CÁLCULO DE OBJETIVOS DIARIOS
- */
 window.calcularObjetivos = function() {
     const peso = parseFloat(document.getElementById('peso').value) || 75;
     const altura = parseFloat(document.getElementById('altura').value) || 180;
@@ -126,7 +113,6 @@ window.calcularObjetivos = function() {
     ];
 
     let html = `<table><tr><th>Día / Comida</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
-    
     intensidades.forEach(d => {
         const kcalT = bmr * d.m * ajuste;
         const pT = peso * d.p;
@@ -134,7 +120,6 @@ window.calcularObjetivos = function() {
         const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
 
         html += `<tr class="dia-total"><td>TOTAL ${d.id}</td><td>${Math.round(kcalT)}</td><td>${Math.round(pT)}</td><td>${Math.round(gT)}</td><td>${Math.round(chT)}</td></tr>`;
-        
         Object.keys(REPARTOS).forEach(c => {
             const rep = REPARTOS[c];
             html += `<tr class="comida-fila">
@@ -146,26 +131,20 @@ window.calcularObjetivos = function() {
             </tr>`;
         });
     });
-    
     html += "</table>";
     document.getElementById('tablaResumen').innerHTML = html;
     document.getElementById('resultados').style.display = 'block';
 };
 
-/**
- * PASO B: GENERAR RECETA CIENTÍFICA (SOLVER)
- */
 window.ejecutarSolverReceta = function() {
     const comida = document.getElementById('comidaSeleccionada').value;
     const tipoDia = document.getElementById('tipoDiaSeleccionado').value;
     
     if (ingredientesElegidos.length === 0) return alert("Añade ingredientes primero.");
 
-    // Obtención de parámetros para el cálculo interno (blindado contra NaNs)
     const peso = parseFloat(document.getElementById('peso').value) || 75;
     const altura = parseFloat(document.getElementById('altura').value) || 180;
     const edad = parseInt(document.getElementById('edad').value) || 34;
-    const genero = document.getElementById('genero').value;
     const ajuste = 1 + (parseFloat(document.getElementById('ajuste').value) / 100);
 
     const mults = {
@@ -175,25 +154,23 @@ window.ejecutarSolverReceta = function() {
     };
     const ratios = { 'Alta': {p:2, g:1.1}, 'Media': {p:1.7, g:1.1}, 'Baja': {p:1.4, g:0.7} };
 
-    let bmr = (genero === 'hombre') 
+    let bmr = (document.getElementById('genero').value === 'hombre') 
         ? 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         : 447.59 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad);
     
-    const manual = parseFloat(document.getElementById('kcalManual').value);
-    if (!isNaN(manual) && manual > 0) bmr = manual;
+    if (parseFloat(document.getElementById('kcalManual').value) > 0) bmr = parseFloat(document.getElementById('kcalManual').value);
 
-    const kcalT = bmr * mults[tipoDia] * ajuste;
     const pT = peso * ratios[tipoDia].p;
     const gT = peso * ratios[tipoDia].g;
-    const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
+    const chT = ((bmr * mults[tipoDia] * ajuste) - (pT * 4) - (gT * 9)) / 4;
 
     const obj = { p: pT * REPARTOS[comida].p, g: gT * REPARTOS[comida].g, ch: chT * REPARTOS[comida].ch };
 
-    // ALGORITMO SOLVER
+    // SOLVER MEJORADO
     let gramos = ingredientesElegidos.map(() => 50);
-    let cP = 0, cG = 0, cCH = 0; // Variables declaradas fuera del bucle (Scope global de la función)
+    let cP = 0, cG = 0, cCH = 0;
 
-    for(let i=0; i<1500; i++) {
+    for(let i=0; i<3000; i++) {
         cP = 0; cG = 0; cCH = 0;
         ingredientesElegidos.forEach((al, idx) => {
             cP += (al.p * gramos[idx] / 100);
@@ -202,25 +179,25 @@ window.ejecutarSolverReceta = function() {
         });
 
         ingredientesElegidos.forEach((al, idx) => {
-            let diff = 0;
-            if (al.p > al.ch && al.p > al.g) diff = (obj.p - cP) * 0.15;
-            else if (al.g > al.p && al.g > al.ch) diff = (obj.g - cG) * 0.15;
-            else diff = (obj.ch - cCH) * 0.15;
-            gramos[idx] = Math.max(0, gramos[idx] + diff);
+            let errorP = (obj.p - cP) * (al.p / 100);
+            let errorG = (obj.g - cG) * (al.g / 100);
+            let errorCH = (obj.ch - cCH) * (al.ch / 100);
+            
+            // Factor de aprendizaje dinámico
+            gramos[idx] = Math.max(0, gramos[idx] + (errorP + errorG + errorCH) * 0.1);
         });
     }
 
-    // RENDERIZADO DE RESULTADOS
     let res = `<div class="receta-box">
-        <h3 style="margin:0;">${comida.toUpperCase()} - ${tipoDia}</h3>
+        <h3>${comida.toUpperCase()} - ${tipoDia}</h3>
         <p style="font-size:0.8rem; color:#666;">Objetivo: P:${obj.p.toFixed(1)}g | G:${obj.g.toFixed(1)}g | CH:${obj.ch.toFixed(1)}g</p>
         <hr style="opacity:0.2;">
         <ul style="list-style:none; padding:0; margin:15px 0;">`;
 
     ingredientesElegidos.forEach((al, i) => {
-        if(gramos[i] > 1.5) {
-            res += `<li style="margin-bottom:8px;">
-                <strong style="font-size:1.2rem;">${Math.round(gramos[i])}g</strong> de ${al.nombre}
+        if(gramos[i] > 0.5) {
+            res += `<li style="margin-bottom:8px; font-size:1.1rem;">
+                <strong>${Math.round(gramos[i])}g</strong> de ${al.nombre}
             </li>`;
         }
     });
