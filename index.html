@@ -2,8 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Nutricional Miquel v2026</title>
+    <title>Calculadora Nutricional Pro - Miquel</title>
     <style>
         :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--primary); padding: 20px; }
@@ -20,17 +19,16 @@
         .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
         .tag { background: #e2e8f0; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; }
         .tag b { margin-left: 8px; color: #e53e3e; cursor: pointer; }
-        .receta-res { margin-top: 20px; padding: 20px; border: 2px solid var(--accent); border-radius: 8px; background: #fff; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🍎 PLANIFICADOR NUTRICIONAL - MIQUEL</h1>
-    <div id="status" style="font-weight: bold; margin-bottom: 10px;">Cargando CSV...</div>
+    <h1>🍎 PLANIFICADOR NUTRICIONAL CIENTÍFICO</h1>
+    <div id="status" style="font-weight: bold; margin-bottom: 15px;">Cargando base de datos...</div>
 
     <div class="section">
-        <h2>1. Datos Biométricos</h2>
+        <h2>1. Parámetros Biométricos</h2>
         <div class="grid">
             <div><label>Peso (kg)</label><input type="number" id="peso" value="75"></div>
             <div><label>Altura (cm)</label><input type="number" id="altura" value="180"></div>
@@ -47,24 +45,24 @@
     </div>
 
     <div id="resultados" class="section" style="display:none;">
-        <h2>2. Desglose de Objetivos por Comida</h2>
+        <h2>2. Objetivos de Macronutrientes</h2>
         <div id="tablaResumen"></div>
     </div>
 
     <div id="seccionPlanificador" class="section" style="display:none;">
-        <h2>3. Diseñador de Receta</h2>
+        <h2>3. Generador de Receta Detallada</h2>
         <div class="grid">
             <div><label>Nivel Día</label><select id="tipoDiaSel"><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></div>
             <div><label>Comida</label><select id="comidaSel"><option value="desayuno">Desayuno</option><option value="comida">Comida</option><option value="merienda">Merienda</option><option value="cena">Cena</option></select></div>
         </div>
         <div style="margin-top: 15px;">
             <label>Añadir Alimento</label>
-            <input type="text" id="buscador" list="listaAlimentos" placeholder="Escribe para buscar...">
+            <input type="text" id="buscador" list="listaAlimentos" placeholder="Buscar ingrediente...">
             <datalist id="listaAlimentos"></datalist>
-            <button onclick="añadirAlimento()" style="background: var(--primary); margin-top: 10px;">AÑADIR A LA LISTA</button>
+            <button onclick="añadirAlimento()" style="background: var(--primary); margin-top: 10px;">AÑADIR A LISTA</button>
         </div>
         <div id="tagsIngredientes" class="tag-container"></div>
-        <button onclick="generarReceta()" style="background:#2980b9;">PASO B: GENERAR GRAMOS EXACTOS</button>
+        <button onclick="generarReceta()" style="background:#2980b9;">PASO B: CALCULAR GRAMOS Y DETALLE</button>
         <div id="resultadoReceta"></div>
     </div>
 </div>
@@ -81,24 +79,25 @@ const REPARTOS = {
     cena: {p:0.43, g:0.44, ch:0.3} 
 };
 
-// Carga de datos con limpieza de formato español (comas por puntos)
+// Carga de datos optimizada para CSV con comas o puntos
 fetch('alimentos.csv').then(r => r.text()).then(t => {
     const filas = t.split(/\r?\n/).filter(linea => linea.trim() !== "");
     db = filas.slice(1).map(f => {
         const separador = f.includes(';') ? ';' : ',';
         const c = f.split(separador);
-        const limpiar = (val) => parseFloat(String(val).replace(',', '.')) || 0;
+        // Función para limpiar números: quita espacios y cambia coma por punto
+        const num = (v) => parseFloat(String(v || "0").replace(',', '.').trim()) || 0;
         return { 
-            n: c[0].trim(), 
-            kcal: limpiar(c[1]), 
-            p: limpiar(c[2]), 
-            g: limpiar(c[3]), 
-            ch: limpiar(c[4]) 
+            n: c[0] ? c[0].trim() : "Desconocido", 
+            kcal: num(c[1]), 
+            p: num(c[2]), 
+            g: num(c[3]), 
+            ch: num(c[4]) 
         };
-    }).filter(a => a.n);
+    }).filter(a => a.n !== "Desconocido");
     document.getElementById('listaAlimentos').innerHTML = db.map(a => `<option value="${a.n}">`).join('');
-    document.getElementById('status').innerText = "✅ CSV Cargado correctamente";
-}).catch(e => { document.getElementById('status').innerText = "❌ Error al cargar alimentos.csv"; });
+    document.getElementById('status').innerText = "✅ Base de datos cargada correctamente";
+});
 
 function calcularObjetivos() {
     const p = parseFloat(document.getElementById('peso').value);
@@ -110,7 +109,7 @@ function calcularObjetivos() {
     let bmr = (g === 'hombre') ? (10*p + 6.25*a - 5*e + 5) : (10*p + 6.25*a - 5*e - 161);
     
     objetivosGlobales = {};
-    let html = `<table><tr><th>Comida</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
+    let html = `<table><tr><th>Día / Comida</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
     
     const config = [
         {id:'Alta', m: parseFloat(document.getElementById('mAlta').value), rp:2.0, rg:1.1},
@@ -125,11 +124,16 @@ function calcularObjetivos() {
         const chT = (kcalT - (pT*4) - (gT*9)) / 4;
         
         objetivosGlobales[d.id] = { p: pT, g: gT, ch: chT, kcal: kcalT, c: {} };
-        html += `<tr class="total-row"><td>Día ${d.id}</td><td>${kcalT}</td><td>${pT.toFixed(0)}</td><td>${gT.toFixed(0)}</td><td>${chT.toFixed(0)}</td></tr>`;
+        html += `<tr class="total-row"><td>TOTAL DÍA ${d.id}</td><td>${kcalT}</td><td>${pT.toFixed(0)}</td><td>${gT.toFixed(0)}</td><td>${chT.toFixed(0)}</td></tr>`;
         
         for(let comida in REPARTOS) {
             const m = REPARTOS[comida];
-            const objC = { p: pT*m.p, g: gT*m.g, ch: chT*m.ch, kcal: Math.round(kcalT * ((m.p+m.g+m.ch)/3)) };
+            const objC = { 
+                p: pT*m.p, 
+                g: gT*m.g, 
+                ch: chT*m.ch, 
+                kcal: Math.round((pT*m.p*4) + (gT*m.g*9) + (chT*m.ch*4))
+            };
             objetivosGlobales[d.id].c[comida] = objC;
             html += `<tr><td>↳ ${comida}</td><td>${objC.kcal}</td><td>${objC.p.toFixed(1)}</td><td>${objC.g.toFixed(1)}</td><td>${objC.ch.toFixed(1)}</td></tr>`;
         }
@@ -156,12 +160,13 @@ function renderTags() {
 }
 
 function generarReceta() {
+    if(!objetivosGlobales) return;
     const d = document.getElementById('tipoDiaSel').value;
     const c = document.getElementById('comidaSel').value;
     const obj = objetivosGlobales[d].c[c];
 
-    // Solver Científico
-    for(let i=0; i<1500; i++) {
+    // Solver de ajuste
+    for(let i=0; i<1000; i++) {
         let curP=0, curG=0, curCH=0;
         seleccionados.forEach(s => {
             curP += (s.p * s.gramos / 100);
@@ -169,26 +174,25 @@ function generarReceta() {
             curCH += (s.ch * s.gramos / 100);
         });
         seleccionados.forEach(s => {
-            let error = ((obj.p - curP)*(s.p/10) + (obj.g - curG)*(s.g/10) + (obj.ch - curCH)*(s.ch/10)) / 100;
-            s.gramos = Math.max(5, s.gramos + error);
+            let diff = ((obj.p - curP)*(s.p/10) + (obj.g - curG)*(s.g/10) + (obj.ch - curCH)*(s.ch/10)) / 100;
+            s.gramos = Math.max(5, s.gramos + diff);
         });
     }
 
-    let finalP=0, finalG=0, finalCH=0, finalKcal=0;
-    let resHtml = `<div class="receta-res"><h3>Receta Detallada: ${c.toUpperCase()}</h3>`;
-    resHtml += `<table><tr><th>Alimento</th><th>Gramos</th><th>Kcal</th><th>P</th><th>G</th><th>CH</th></tr>`;
+    let fP=0, fG=0, fCH=0, fK=0;
+    let resHtml = `<div class="receta-res"><h3>Desglose de Ingredientes:</h3><table><tr><th>Alimento</th><th>Cant.</th><th>Kcal</th><th>P</th><th>G</th><th>CH</th></tr>`;
     
     seleccionados.forEach(s => {
         const pAl = (s.p * s.gramos / 100);
         const gAl = (s.g * s.gramos / 100);
         const chAl = (s.ch * s.gramos / 100);
         const kcalAl = (s.kcal * s.gramos / 100);
-        finalP += pAl; finalG += gAl; finalCH += chAl; finalKcal += kcalAl;
+        fP+=pAl; fG+=gAl; fCH+=chAl; fK+=kcalAl;
         resHtml += `<tr><td>${s.n}</td><td><b>${Math.round(s.gramos)}g</b></td><td>${Math.round(kcalAl)}</td><td>${pAl.toFixed(1)}</td><td>${gAl.toFixed(1)}</td><td>${chAl.toFixed(1)}</td></tr>`;
     });
 
-    resHtml += `<tr class="total-row"><td>TOTAL</td><td>-</td><td>${Math.round(finalKcal)}</td><td>${finalP.toFixed(1)}</td><td>${finalG.toFixed(1)}</td><td>${finalCH.toFixed(1)}</td></tr>`;
-    document.getElementById('resultadoReceta').innerHTML = resHtml + `</table></div>`;
+    resHtml += `<tr class="total-row"><td>TOTAL RECETA</td><td>-</td><td>${Math.round(fK)}</td><td>${fP.toFixed(1)}</td><td>${fG.toFixed(1)}</td><td>${fCH.toFixed(1)}</td></tr></table></div>`;
+    document.getElementById('resultadoReceta').innerHTML = resHtml;
 }
 </script>
 </body>
