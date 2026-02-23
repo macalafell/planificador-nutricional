@@ -1,4 +1,4 @@
-Alimento,Kcal,Proteína,Grasa,CH
+Alimento,Kcal,P,G,CH
 Arroz blanco crudo,362,"7,00","0,60","87,60"
 Arroz blanco cocido,123,"2,20","0,30","27,90"
 Arroz integral crudo,370,"7,90","2,90","77,20"
@@ -619,4 +619,5 @@ Miel natural Lidl,328,"0,40","0,00","82,00"
 Mermelada fresa Lidl,246,"0,40","0,10","61,00"
 Chocolate negro 85% Lidl,559,"9,50","46,00","29,00"
 Cacao puro desgrasado Lidl,357,"22,00","11,00","58,00"
+
 Crema cacao avellanas Lidl,547,"6,00","32,00","57,00"
