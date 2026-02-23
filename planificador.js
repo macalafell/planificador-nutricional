@@ -1,6 +1,5 @@
 /**
- * PLANIFICADOR NUTRICIONAL MIQUEL - VERSIÓN ULTRA-PRECISA
- * Corrección de mapeo de macros y depuración de carga.
+ * PLANIFICADOR NUTRICIONAL MIQUEL - FIXED FOR SPANISH CSV (COMMA DECIMAL)
  */
 
 let baseDatosAlimentos = [];
@@ -26,16 +25,18 @@ async function cargarDatosCSV() {
         const texto = await respuesta.text();
         const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
-        // Detectar separador automáticamente (coma o punto y coma)
-        const separador = lineas[0].includes(';') ? ';' : ',';
+        // Detectar si el CSV usa coma o punto y coma como separador de COLUMNAS
+        // Viendo tu imagen, parece que las columnas están bien definidas, probamos con tabulación o coma.
+        const separador = lineas[0].includes(';') ? ';' : (lineas[0].includes('\t') ? '\t' : ',');
         
-        baseDatosAlimentos = lineas.slice(1).map((linea, index) => {
+        baseDatosAlimentos = lineas.slice(1).map(linea => {
             const col = linea.split(separador); 
             if (col.length >= 5) {
                 const limpiarNum = (val) => {
                     if(!val) return 0;
-                    // Elimina espacios, cambia comas por puntos y limpia caracteres no numéricos
-                    let n = parseFloat(val.toString().replace(/\s/g, '').replace(',', '.'));
+                    // TRUCO CLAVE: Quitamos puntos de miles y cambiamos coma decimal por punto
+                    let s = val.toString().trim().replace(/\./g, '').replace(',', '.');
+                    let n = parseFloat(s);
                     return isNaN(n) ? 0 : n;
                 };
 
@@ -50,14 +51,12 @@ async function cargarDatosCSV() {
             return null;
         }).filter(a => a !== null);
 
-        console.log("Muestra de datos cargados:", baseDatosAlimentos.slice(0, 3));
-
         if (baseDatosAlimentos.length > 0) {
-            statusDiv.innerHTML = `✅ ${baseDatosAlimentos.length} alimentos cargados.`;
+            statusDiv.innerHTML = `✅ ${baseDatosAlimentos.length} alimentos cargados correctamente.`;
             document.getElementById('diseñador').style.display = 'block';
             poblarDatalist();
         }
-    } catch (e) { statusDiv.innerHTML = "❌ Error leyendo CSV."; }
+    } catch (e) { statusDiv.innerHTML = "❌ Error en el archivo CSV."; }
 }
 
 function poblarDatalist() {
@@ -146,7 +145,6 @@ window.ejecutarSolverReceta = function() {
     
     if (ingredientesElegidos.length === 0) return alert("Añade ingredientes.");
 
-    // Cálculo de objetivos específicos
     const peso = parseFloat(document.getElementById('peso').value) || 75;
     const altura = parseFloat(document.getElementById('altura').value) || 180;
     const edad = parseInt(document.getElementById('edad').value) || 34;
@@ -169,38 +167,38 @@ window.ejecutarSolverReceta = function() {
 
     const obj = { p: pT * REPARTOS[comida].p, g: gT * REPARTOS[comida].g, ch: chT * REPARTOS[comida].ch };
 
-    // SOLVER OPTIMIZADO: Ajuste multidimensional
-    let gramos = ingredientesElegidos.map(() => 100); // Empezamos en 100g para evitar el 0
-    let curP, curG, curCH;
+    // SOLVER CON LÍMITE DE SEGURIDAD
+    let gramos = ingredientesElegidos.map(() => 80); 
+    let cP, cG, cCH;
 
-    for(let i=0; i<5000; i++) {
-        curP = 0; curG = 0; curCH = 0;
+    for(let i=0; i<4000; i++) {
+        cP = 0; cG = 0; cCH = 0;
         ingredientesElegidos.forEach((al, idx) => {
-            curP += (al.p * gramos[idx] / 100);
-            curG += (al.g * gramos[idx] / 100);
-            curCH += (al.ch * gramos[idx] / 100);
+            cP += (al.p * gramos[idx] / 100);
+            cG += (al.g * gramos[idx] / 100);
+            cCH += (al.ch * gramos[idx] / 100);
         });
 
         ingredientesElegidos.forEach((al, idx) => {
-            // Calculamos qué nutriente es dominante en este alimento para ajustar principalmente ese
-            let factor = 0.05;
-            if (al.p > al.ch && al.p > al.g) gramos[idx] += (obj.p - curP) * factor;
-            else if (al.g > al.p && al.g > al.ch) gramos[idx] += (obj.g - curG) * factor;
-            else gramos[idx] += (obj.ch - curCH) * factor;
+            // Ajuste basado en la carencia del macro principal del alimento
+            if (al.p > al.ch && al.p > al.g) gramos[idx] += (obj.p - cP) * 0.08;
+            else if (al.g > al.p && al.g > al.ch) gramos[idx] += (obj.g - cG) * 0.08;
+            else gramos[idx] += (obj.ch - cCH) * 0.08;
             
-            gramos[idx] = Math.max(0, gramos[idx]);
+            // Limitamos a un máximo de 600g por ingrediente para evitar resultados absurdos
+            gramos[idx] = Math.max(0, Math.min(600, gramos[idx]));
         });
     }
 
-    // RENDERIZADO FINAL
-    let tKcal = 0, tP = 0, tG = 0, tCH = 0;
+    // RENDERIZADO
+    let tP = 0, tG = 0, tCH = 0, tKcal = 0;
     let res = `<div class="receta-box">
-        <h3>${comida.toUpperCase()} (${tipoDia})</h3>
-        <p style="font-size:0.8rem; background:#f4f4f4; padding:8px;">
-            <b>OBJETIVO:</b> ${obj.p.toFixed(1)}g P | ${obj.g.toFixed(1)}g G | ${obj.ch.toFixed(1)}g CH
-        </p>
-        <table style="width:100%; font-size:0.9rem; border-collapse:collapse;">
-            <tr style="border-bottom:2px solid #ddd;"><th>Alimento</th><th>Cant.</th><th>P</th><th>G</th><th>CH</th></tr>`;
+        <h3>RECETA: ${comida.toUpperCase()}</h3>
+        <p style="font-size:0.8rem; color:#555; margin-bottom:10px;">Objetivo: P:${obj.p.toFixed(1)}g | G:${obj.g.toFixed(1)}g | CH:${obj.ch.toFixed(1)}g</p>
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+            <tr style="border-bottom:2px solid #333; text-align:left;">
+                <th>Alimento</th><th>Cant.</th><th>P</th><th>G</th><th>CH</th>
+            </tr>`;
 
     ingredientesElegidos.forEach((al, i) => {
         if(gramos[i] > 1) {
@@ -219,13 +217,14 @@ window.ejecutarSolverReceta = function() {
         }
     });
 
-    res += `<tr style="background:#e8f5e9; font-weight:bold;">
-                <td colspan="2">TOTAL REAL</td>
+    res += `<tr style="background:#f0f0f0; font-weight:bold;">
+                <td colspan="2">TOTALES</td>
                 <td>${tP.toFixed(1)}</td>
                 <td>${tG.toFixed(1)}</td>
                 <td>${tCH.toFixed(1)}</td>
             </tr>
         </table>
+        <p style="margin-top:10px; font-weight:bold; color:#2e7d32;">Energía Total: ${Math.round(tKcal)} kcal</p>
     </div>`;
     
     document.getElementById('objetivoComidaDetalle').innerHTML = res;
