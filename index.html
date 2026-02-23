@@ -1,72 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Calculadora Nutricional Miquel - Fixed</title>
-    <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--primary); padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #eee; border-radius: 8px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        label { font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: center; font-size: 0.9rem; }
-        th { background: var(--primary); color: white; }
-        .total-row { background: #e8f5e9 !important; font-weight: bold; }
-        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
-        .tag { background: #e2e8f0; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; }
-        .tag b { margin-left: 8px; color: #e53e3e; cursor: pointer; }
-        .receta-res { margin-top: 20px; padding: 20px; border: 2px solid var(--accent); border-radius: 8px; background: #fff; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>🍎 SISTEMA DE NUTRICIÓN CIENTÍFICO</h1>
-    <div id="status" style="font-weight: bold; color: #e67e22; margin-bottom: 10px;">Iniciando base de datos...</div>
-
-    <div class="section">
-        <h2>1. Perfil y Actividad</h2>
-        <div class="grid">
-            <div><label>Peso (kg)</label><input type="number" id="peso" value="75"></div>
-            <div><label>Altura (cm)</label><input type="number" id="altura" value="180"></div>
-            <div><label>Edad</label><input type="number" id="edad" value="34"></div>
-            <div><label>Género</label><select id="genero"><option value="hombre">Hombre</option><option value="mujer">Mujer</option></select></div>
-        </div>
-        <div class="grid">
-            <div><label>Mult. Alta</label><input type="number" id="mAlta" value="1.6" step="0.1"></div>
-            <div><label>Mult. Media</label><input type="number" id="mMedia" value="1.45" step="0.1"></div>
-            <div><label>Mult. Baja</label><input type="number" id="mBaja" value="1.2" step="0.1"></div>
-        </div>
-        <button onclick="calcularObjetivos()">PASO A: CALCULAR OBJETIVOS</button>
-    </div>
-
-    <div id="resultados" class="section" style="display:none;">
-        <h2>2. Objetivos por Comida</h2>
-        <div id="tablaResumen"></div>
-    </div>
-
-    <div id="seccionPlanificador" class="section" style="display:none;">
-        <h2>3. Diseñador de Receta Exacta</h2>
-        <div class="grid">
-            <div><label>Tipo de Día</label><select id="tipoDiaSel"><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></div>
-            <div><label>Comida a Planificar</label><select id="comidaSel"><option value="desayuno">Desayuno</option><option value="comida">Comida</option><option value="merienda">Merienda</option><option value="cena">Cena</option></select></div>
-        </div>
-        <div style="margin-top: 15px;">
-            <label>Añadir Ingredientes</label>
-            <input type="text" id="buscador" list="listaAlimentos" placeholder="Escribe y añade...">
-            <datalist id="listaAlimentos"></datalist>
-            <button onclick="añadirAlimento()" style="background: var(--primary); margin-top: 10px;">AÑADIR A LA LISTA</button>
-        </div>
-        <div id="tagsIngredientes" class="tag-container"></div>
-        <button onclick="generarReceta()" style="background:#2980b9;">PASO B: GENERAR GRAMOS EXACTOS</button>
-        <div id="resultadoReceta"></div>
-    </div>
-</div>
-
 <script>
 let db = [];
 let seleccionados = [];
@@ -79,31 +10,35 @@ const REPARTOS = {
     cena: {p:0.43, g:0.44, ch:0.3} 
 };
 
-// CARGA Y LIMPIEZA CIENTÍFICA DE DATOS
+// CARGADOR BLINDADO CONTRA FORMATO EXCEL/ESPAÑA
 fetch('alimentos.csv').then(r => r.text()).then(t => {
     const filas = t.split(/\r?\n/).filter(linea => linea.trim() !== "");
     db = filas.slice(1).map(f => {
-        const c = f.split(/[;,]/); // Detecta tanto coma como punto y coma
+        // Separamos por coma pero gestionamos posibles comillas de Excel
+        const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
         
-        // Limpiador agresivo: elimina todo lo que no sea número, coma o punto
-        const parseNum = (val) => {
+        const limpiar = (val) => {
             if(!val) return 0;
-            let clean = val.replace(/[^0-9.,]/g, '').replace(',', '.');
-            return parseFloat(clean) || 0;
+            // Quitamos comillas, espacios y cambiamos coma decimal por punto
+            let s = val.replace(/"/g, '').replace(/\s/g, '').replace(',', '.');
+            return parseFloat(s) || 0;
         };
 
         return { 
-            n: c[0].trim(), 
-            kcal: parseNum(c[1]), 
-            p: parseNum(c[2]), 
-            g: parseNum(c[3]), 
-            ch: parseNum(c[4]) 
+            n: c[0] ? c[0].replace(/"/g, '').trim() : "Error", 
+            kcal: limpiar(c[1]), 
+            p: limpiar(c[2]), 
+            g: limpiar(c[3]), 
+            ch: limpiar(c[4]) 
         };
-    }).filter(a => a.n);
+    }).filter(a => a.n !== "Error");
     
     document.getElementById('listaAlimentos').innerHTML = db.map(a => `<option value="${a.n}">`).join('');
-    document.getElementById('status').innerText = "✅ Base de datos lista (" + db.length + " alimentos)";
+    document.getElementById('status').innerText = "✅ Base de datos cargada: " + db.length + " alimentos";
     document.getElementById('status').style.color = "green";
+}).catch(err => {
+    document.getElementById('status').innerText = "❌ Error al cargar CSV";
+    console.error(err);
 });
 
 function calcularObjetivos() {
@@ -134,9 +69,8 @@ function calcularObjetivos() {
         
         for(let comida in REPARTOS) {
             const m = REPARTOS[comida];
-            const objC = { p: pT*m.p, g: gT*m.g, ch: chT*m.ch };
-            objetivosGlobales[d.id].c[comida] = objC;
-            html += `<tr><td>↳ ${comida}</td><td>-</td><td>${objC.p.toFixed(1)}</td><td>${objC.g.toFixed(1)}</td><td>${objC.ch.toFixed(1)}</td></tr>`;
+            objetivosGlobales[d.id].c[comida] = { p: pT*m.p, g: gT*m.g, ch: chT*m.ch };
+            html += `<tr><td>↳ ${comida}</td><td>-</td><td>${(pT*m.p).toFixed(1)}</td><td>${(gT*m.g).toFixed(1)}</td><td>${(chT*m.ch).toFixed(1)}</td></tr>`;
         }
     });
     
@@ -165,25 +99,25 @@ function generarReceta() {
     const c = document.getElementById('comidaSel').value;
     const obj = objetivosGlobales[d].c[c];
 
-    // SOLVER: Bucle de ajuste de gramos
-    for(let i=0; i<2000; i++) {
+    // Solver con más precisión para Mallorca
+    for(let i=0; i<3000; i++) {
         let curP=0, curG=0, curCH=0;
         seleccionados.forEach(s => {
             curP += (s.p * s.gramos / 100);
             curG += (s.g * s.gramos / 100);
             curCH += (s.ch * s.gramos / 100);
         });
+        
         seleccionados.forEach(s => {
-            // Factor de corrección basado en la importancia del macro en el alimento
-            let errorP = (obj.p - curP) * (s.p / 20);
-            let errorG = (obj.g - curG) * (s.g / 20);
-            let errorCH = (obj.ch - curCH) * (s.ch / 20);
-            s.gramos = Math.max(2, s.gramos + (errorP + errorG + errorCH) / 10);
+            let errorP = (obj.p - curP) * (s.p / 25);
+            let errorG = (obj.g - curG) * (s.g / 25);
+            let errorCH = (obj.ch - curCH) * (s.ch / 25);
+            s.gramos = Math.max(1, s.gramos + (errorP + errorG + errorCH) / 5);
         });
     }
 
     let tP=0, tG=0, tCH=0, tK=0;
-    let resHtml = `<div class="receta-res"><h3>Receta Detallada: ${c.toUpperCase()} (${d})</h3>`;
+    let resHtml = `<div class="receta-res"><h3>Resultado: ${c.toUpperCase()} (${d})</h3>`;
     resHtml += `<table><tr><th>Alimento</th><th>Gramos</th><th>Kcal</th><th>P</th><th>G</th><th>CH</th></tr>`;
     
     seleccionados.forEach(s => {
@@ -195,10 +129,8 @@ function generarReceta() {
         resHtml += `<tr><td>${s.n}</td><td><b>${Math.round(s.gramos)}g</b></td><td>${Math.round(kA)}</td><td>${pA.toFixed(1)}</td><td>${gA.toFixed(1)}</td><td>${chA.toFixed(1)}</td></tr>`;
     });
 
-    resHtml += `<tr class="total-row"><td>TOTAL</td><td>-</td><td>${Math.round(tK)}</td><td>${tP.toFixed(1)}</td><td>${tG.toFixed(1)}</td><td>${tCH.toFixed(1)}</td></tr>`;
-    resHtml += `</table><p style="font-size:0.8rem; color:gray; margin-top:10px;">Objetivo: P:${obj.p.toFixed(1)} | G:${obj.g.toFixed(1)} | CH:${obj.ch.toFixed(1)}</p></div>`;
+    resHtml += `<tr class="total-row"><td>TOTAL REAL</td><td>-</td><td>${Math.round(tK)}</td><td>${tP.toFixed(1)}</td><td>${tG.toFixed(1)}</td><td>${tCH.toFixed(1)}</td></tr>`;
+    resHtml += `</table><p style="font-size:0.8rem; color:gray;">Objetivo teórico: P:${obj.p.toFixed(1)} G:${obj.g.toFixed(1)} CH:${obj.ch.toFixed(1)}</p></div>`;
     document.getElementById('resultadoReceta').innerHTML = resHtml;
 }
 </script>
-</body>
-</html>
