@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planificador Nutricional Trail - Miquel V2.1</title>
+    <title>Planificador Nutricional Trail - Miquel V2.2</title>
     <style>
-        :root { --primary: #0f172a; --accent: #10b981; --warning: #f59e0b; --bg: #f8fafc; --error: #ef4444; }
+        :root { --primary: #0f172a; --accent: #10b981; --warning: #f59e0b; --bg: #f8fafc; --error: #ef4444; --blue: #3b82f6; }
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); padding: 20px; line-height: 1.6; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .section { margin-bottom: 30px; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; }
         h1 { font-size: 1.8rem; border-bottom: 3px solid var(--accent); display: inline-block; margin-bottom: 25px; }
+        h3 { margin-top: 0; color: #475569; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        label { font-weight: 700; font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 8px; text-transform: uppercase; }
+        label { font-weight: 700; font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 8px; }
         input, select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
-        button { background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 800; width: 100%; text-transform: uppercase; transition: 0.3s; }
+        input:focus { border-color: var(--blue); outline: none; }
+        button { background: var(--blue); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 800; width: 100%; text-transform: uppercase; transition: 0.2s; }
         button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .btn-csv { background: #10b981; margin-top: 15px; }
+        .btn-csv { background: var(--accent); margin-top: 15px; }
         #status { padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; font-size: 0.9rem; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
         th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: center; }
@@ -23,22 +25,23 @@
         .total-row { background: #f8fafc; font-weight: bold; }
         .tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; margin: 5px; font-size: 0.85rem; }
         .tag b { margin-left: 8px; color: var(--error); cursor: pointer; }
-        .input-gramos { width: 75px; text-align: center; font-weight: bold; border: 2px solid #3b82f6; border-radius: 4px; background: #eff6ff; }
-        .locked { background: #fee2e2 !important; border-color: var(--error) !important; }
+        .input-gramos { width: 75px; text-align: center; font-weight: bold; border: 2px solid var(--blue); border-radius: 4px; background: #eff6ff; }
+        .locked { background: #fee2e2 !important; border-color: var(--error) !important; color: var(--error); }
         .deviation { font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: block; }
         .dev-ok { color: var(--accent); }
         .dev-err { color: var(--error); }
+        input[type="range"] { accent-color: var(--blue); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🏔️ Sistema Nutricional Pro (V2.1)</h1>
+    <h1>🏔️ Sistema Nutricional Pro (V2.2)</h1>
     
-    <div id="status">⏳ Cargando base de datos...</div>
+    <div id="status">⏳ Cargando base de datos de alimentos...</div>
 
     <div class="section">
-        <h3>1. Parámetros Biométricos y Ajuste</h3>
+        <h3>1. Parámetros Biométricos y Margen de Ajuste</h3>
         <div class="grid">
             <div><label>Peso (kg)</label><input type="number" id="peso" value="75"></div>
             <div><label>Altura (cm)</label><input type="number" id="altura" value="180"></div>
@@ -50,29 +53,29 @@
             <div><label>Mult. Media</label><input type="number" id="mMedia" value="1.45" step="0.05"></div>
             <div><label>Mult. Baja</label><input type="number" id="mBaja" value="1.2" step="0.05"></div>
             <div>
-                <label>Ajuste Calórico Total: <span id="labelAjuste">0%</span></label>
-                <input type="range" id="ajusteKcal" min="0.8" max="1.2" step="0.01" value="1" oninput="document.getElementById('labelAjuste').innerText = Math.round((this.value-1)*100)+'%';">
+                <label>Ajuste Kcal Global: <span id="labelAjuste" style="color:var(--blue)">0%</span></label>
+                <input type="range" id="ajusteKcal" min="0.8" max="1.2" step="0.01" value="1" oninput="actualizarSlider(this.value)">
             </div>
         </div>
-        <button onclick="calcularObjetivos()">Paso A: Calcular Objetivos Macro</button>
+        <button onclick="calcularObjetivos()">Paso A: Calcular Cuadro de Mandos</button>
     </div>
 
     <div id="resumenMacros" style="display:none;" class="section">
-        <h3>2. Objetivos de Macros por Comida</h3>
+        <h3>2. Objetivos de Macros y Energía por Comida</h3>
         <div id="tablaMacros"></div>
     </div>
 
     <div id="seccionReceta" style="display:none;" class="section">
-        <h3>3. Diseñador de Receta con Solver</h3>
+        <h3>3. Diseñador de Receta con Solver Automático</h3>
         <div class="grid">
-            <div><label>Tipo de Día</label><select id="tipoDiaSel" onchange="generarReceta()"><option value="Alta">Día Alta</option><option value="Media">Día Media</option><option value="Baja">Día Baja</option></select></div>
-            <div><label>Comida</label><select id="comidaSel" onchange="generarReceta()"><option value="desayuno">Desayuno</option><option value="comida">Comida</option><option value="merienda">Merienda</option><option value="cena">Cena</option></select></div>
+            <div><label>Día de Entrenamiento</label><select id="tipoDiaSel" onchange="generarReceta()"><option value="Alta">Día Alta</option><option value="Media">Día Media</option><option value="Baja">Día Baja</option></select></div>
+            <div><label>Comida a Planificar</label><select id="comidaSel" onchange="generarReceta()"><option value="desayuno">Desayuno</option><option value="comida">Comida</option><option value="merienda">Merienda</option><option value="cena">Cena</option></select></div>
         </div>
         
         <div style="margin-bottom: 15px;">
-            <label>Añadir Alimento</label>
+            <label>Añadir Alimento (escribe 3 letras para buscar)</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="buscador" list="listaAlimentos" placeholder="Ej: Pan integral..." onkeypress="if(event.key==='Enter') añadirAlimento()">
+                <input type="text" id="buscador" list="listaAlimentos" placeholder="Ej: Pan integral..." oninput="filtrarBuscador(this.value)" onkeypress="if(event.key==='Enter') añadirAlimento()">
                 <datalist id="listaAlimentos"></datalist>
                 <button onclick="añadirAlimento()" style="width: auto; padding: 0 20px; background: #64748b;">Añadir</button>
             </div>
@@ -81,7 +84,7 @@
         <div id="listaTags" style="margin-bottom: 20px;"></div>
         
         <div id="resultadoFinal"></div>
-        <button id="btnCSV" class="btn-csv" style="display:none;" onclick="exportarCSV()">Exportar Receta a CSV (Excel)</button>
+        <button id="btnCSV" class="btn-csv" style="display:none;" onclick="exportarCSV()">Exportar Receta a CSV</button>
     </div>
 </div>
 
@@ -90,52 +93,72 @@ let dbAlimentos = [];
 let seleccionados = [];
 let macrosCalculados = null;
 
-const REPARTO = {
+const REPARTO_HORECA = {
     desayuno: { p: 0.10, g: 0.10, ch: 0.27 },
     comida:   { p: 0.39, g: 0.40, ch: 0.26 },
     merienda: { p: 0.08, g: 0.06, ch: 0.17 },
     cena:     { p: 0.43, g: 0.44, ch: 0.30 }
 };
 
-// --- CARGA DE DATOS ---
+// --- CARGA Y PARSEO DE CSV ---
 window.onload = () => {
     fetch('alimentos.csv')
-        .then(res => res.text())
+        .then(res => {
+            if (!res.ok) throw new Error();
+            return res.text();
+        })
         .then(csv => {
             const lineas = csv.split(/\r?\n/).filter(line => line.trim() !== "");
             dbAlimentos = lineas.slice(1).map(line => {
                 const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
                 return {
                     n: cols[0].replace(/"/g, '').trim(),
-                    kcal: limpiar(cols[1]),
-                    p: limpiar(cols[2]),
-                    g: limpiar(cols[3]),
-                    ch: limpiar(cols[4])
+                    kcal: parseNum(cols[1]),
+                    p: parseNum(cols[2]),
+                    g: parseNum(cols[3]),
+                    ch: parseNum(cols[4])
                 };
             }).filter(a => a.n !== "");
-            document.getElementById('listaAlimentos').innerHTML = dbAlimentos.map(a => `<option value="${a.n}">`).join('');
-            document.getElementById('status').innerHTML = "✅ Base de datos cargada correctamente.";
+            document.getElementById('status').innerHTML = "✅ Base de datos conectada. " + dbAlimentos.length + " alimentos listos.";
             document.getElementById('status').style.background = "#f0fdf4";
-        }).catch(e => {
-            document.getElementById('status').innerHTML = "❌ Error al cargar alimentos.csv";
+        }).catch(() => {
+            document.getElementById('status').innerHTML = "❌ Error: Asegúrate de que 'alimentos.csv' esté en la misma carpeta.";
+            document.getElementById('status').style.background = "#fef2f2";
         });
 };
 
-function limpiar(val) {
+function parseNum(val) {
     if(!val) return 0;
     let n = val.replace(/"/g, '').replace(',', '.').trim();
     return parseFloat(n) || 0;
 }
 
-// --- CÁLCULO OBJETIVOS (CORREGIDO CON KCAL POR COMIDA) ---
-function calcularObjetivos() {
-    const peso = parseFloat(document.getElementById('peso').value);
-    const altura = parseFloat(document.getElementById('altura').value);
-    const edad = parseFloat(document.getElementById('edad').value);
-    const genero = document.getElementById('genero').value;
-    const factorGlobal = parseFloat(document.getElementById('ajusteKcal').value);
+function actualizarSlider(val) {
+    const pct = Math.round((val - 1) * 100);
+    document.getElementById('labelAjuste').innerText = (pct > 0 ? "+" : "") + pct + "%";
+}
 
-    const bmr = (genero === 'hombre') ? (10 * peso + 6.25 * altura - 5 * edad + 5) : (10 * peso + 6.25 * altura - 5 * edad - 161);
+// --- FILTRO DE BÚSQUEDA (Mínimo 3 caracteres) ---
+function filtrarBuscador(query) {
+    const list = document.getElementById('listaAlimentos');
+    if (query.length < 3) {
+        list.innerHTML = "";
+        return;
+    }
+    const matches = dbAlimentos.filter(a => a.n.toLowerCase().includes(query.toLowerCase())).slice(0, 15);
+    list.innerHTML = matches.map(a => `<option value="${a.n}">`).join('');
+}
+
+// --- CÁLCULO DE OBJETIVOS (PASO 1) ---
+function calcularObjetivos() {
+    const p = parseFloat(document.getElementById('peso').value);
+    const h = parseFloat(document.getElementById('altura').value);
+    const e = parseFloat(document.getElementById('edad').value);
+    const g = document.getElementById('genero').value;
+    const adjust = parseFloat(document.getElementById('ajusteKcal').value);
+
+    // Mifflin-St Jeor
+    const bmr = (g === 'hombre') ? (10 * p + 6.25 * h - 5 * e + 5) : (10 * p + 6.25 * h - 5 * e - 161);
 
     const configs = [
         { id: 'Alta', m: parseFloat(document.getElementById('mAlta').value), rp: 2, rg: 1.1 },
@@ -144,27 +167,25 @@ function calcularObjetivos() {
     ];
 
     macrosCalculados = {};
-    let html = `<table><tr><th>Comida</th><th>Kcal</th><th>Prot (g)</th><th>Grasa (g)</th><th>CH (g)</th></tr>`;
+    let html = `<table><tr><th>Comida</th><th>Energía (Kcal)</th><th>Prot (g)</th><th>Grasa (g)</th><th>CH (g)</th></tr>`;
 
     configs.forEach(c => {
-        const kcalTotal = (bmr * c.m) * factorGlobal;
-        const pTotal = peso * c.rp;
-        const gTotal = peso * c.rg;
-        const chTotal = (kcalTotal - (pTotal * 4) - (gTotal * 9)) / 4;
+        const kcalT = (bmr * c.m) * adjust;
+        const pT = p * c.rp;
+        const gT = p * c.rg;
+        const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
 
-        macrosCalculados[c.id] = { p: pTotal, g: gTotal, ch: chTotal, kcal: kcalTotal, comidas: {} };
+        macrosCalculados[c.id] = { p: pT, g: gT, ch: chT, kcal: kcalT, comidas: {} };
+        html += `<tr class="total-row"><td>Día ${c.id}</td><td>${kcalT.toFixed(0)}</td><td>${pT.toFixed(0)}</td><td>${gT.toFixed(0)}</td><td>${chT.toFixed(0)}</td></tr>`;
 
-        html += `<tr class="total-row"><td>Día ${c.id}</td><td>${kcalTotal.toFixed(0)}</td><td>${pTotal.toFixed(0)}</td><td>${gTotal.toFixed(0)}</td><td>${chTotal.toFixed(0)}</td></tr>`;
-
-        for (let com in REPARTO) {
-            const r = REPARTO[com];
-            const pC = pTotal * r.p;
-            const gC = gTotal * r.g;
-            const chC = chTotal * r.ch;
-            const kcalC = (pC * 4) + (gC * 9) + (chC * 4); // Cálculo de Kcal por comida
-            
-            macrosCalculados[c.id].comidas[com] = { p: pC, g: gC, ch: chC, kcal: kcalC };
-            html += `<tr><td>&nbsp;&nbsp;↳ ${com}</td><td><b>${kcalC.toFixed(0)}</b></td><td>${pC.toFixed(1)}</td><td>${gC.toFixed(1)}</td><td>${chC.toFixed(1)}</td></tr>`;
+        for (let meal in REPARTO_HORECA) {
+            const r = REPARTO_HORECA[meal];
+            const pM = pT * r.p;
+            const gM = gT * r.g;
+            const chM = chT * r.ch;
+            const kcalM = (pM * 4) + (gM * 9) + (chM * 4);
+            macrosCalculados[c.id].comidas[meal] = { p: pM, g: gM, ch: chM, kcal: kcalM };
+            html += `<tr><td>↳ ${meal.charAt(0).toUpperCase()+meal.slice(1)}</td><td><b>${kcalM.toFixed(0)}</b></td><td>${pM.toFixed(1)}</td><td>${gM.toFixed(1)}</td><td>${chM.toFixed(1)}</td></tr>`;
         }
     });
 
@@ -174,13 +195,14 @@ function calcularObjetivos() {
     if(seleccionados.length > 0) generarReceta();
 }
 
-// --- GESTIÓN RECETA ---
+// --- GESTIÓN DE RECETA ---
 function añadirAlimento() {
-    const nombre = document.getElementById('buscador').value;
-    const item = dbAlimentos.find(a => a.n === nombre);
+    const input = document.getElementById('buscador');
+    const item = dbAlimentos.find(a => a.n === input.value);
     if(item) {
         seleccionados.push({...item, gramos: 100, manual: false});
-        document.getElementById('buscador').value = "";
+        input.value = "";
+        document.getElementById('listaAlimentos').innerHTML = "";
         actualizarTags();
         generarReceta();
     }
@@ -198,7 +220,7 @@ function updateManual(index, value) {
     generarReceta();
 }
 
-// --- SOLVER Y RENDER (CORREGIDO CON DESVIACIÓN GRASAS) ---
+// --- EL SOLVER (Algoritmo de Corrección Iterativa) ---
 function generarReceta() {
     if(seleccionados.length === 0) {
         document.getElementById('resultadoFinal').innerHTML = "";
@@ -207,33 +229,32 @@ function generarReceta() {
     }
     
     const dia = document.getElementById('tipoDiaSel').value;
-    const comida = document.getElementById('comidaSel').value;
-    const obj = macrosCalculados[dia].comidas[comida];
+    const meal = document.getElementById('comidaSel').value;
+    const target = macrosCalculados[dia].comidas[meal];
 
+    // 3000 iteraciones para cuadre exacto
     for(let i=0; i<3000; i++) {
-        let curP = 0, curCH = 0, curG = 0;
+        let curP = 0, curCH = 0;
         seleccionados.forEach(s => {
             curP += (s.p * s.gramos / 100);
-            curG += (s.g * s.gramos / 100);
             curCH += (s.ch * s.gramos / 100);
         });
 
-        let diffCH = obj.ch - curCH;
-        let diffP = obj.p - curP;
+        let errCH = target.ch - curCH;
+        let errP = target.p - curP;
 
         seleccionados.forEach(s => {
-            if(s.manual) return;
+            if(s.manual) return; // Si el usuario fijó los gramos, el solver no lo toca
             let sensCH = (s.ch > 15) ? (s.ch/100) : 0.05;
             let sensP = (s.p > 10) ? (s.p/100) : 0.05;
-            s.gramos += (diffCH * sensCH + diffP * sensP) * 0.1;
+            s.gramos += (errCH * sensCH + errP * sensP) * 0.1;
             if(s.gramos < 0) s.gramos = 0;
         });
     }
-
-    renderTablaResultado(obj);
+    renderTabla(target);
 }
 
-function renderTablaResultado(obj) {
+function renderTabla(target) {
     let tP=0, tG=0, tCH=0, tK=0;
     let rows = seleccionados.map((s, i) => {
         const sp = (s.p * s.gramos / 100);
@@ -241,9 +262,8 @@ function renderTablaResultado(obj) {
         const sch = (s.ch * s.gramos / 100);
         const sk = (s.kcal * s.gramos / 100);
         tP += sp; tG += sg; tCH += sch; tK += sk;
-        
         return `<tr>
-            <td style="text-align:left;">${s.n}</td>
+            <td style="text-align:left">${s.n}</td>
             <td><input type="number" class="input-gramos ${s.manual?'locked':''}" value="${Math.round(s.gramos)}" onchange="updateManual(${i}, this.value)"></td>
             <td>${sp.toFixed(1)}</td>
             <td>${sg.toFixed(1)}</td>
@@ -251,42 +271,40 @@ function renderTablaResultado(obj) {
         </tr>`;
     }).join('');
 
-    const devP = tP - obj.p;
-    const devG = tG - obj.g;
-    const devCH = tCH - obj.ch;
+    const dP = tP - target.p;
+    const dG = tG - target.g;
+    const dCH = tCH - target.ch;
 
-    let resHtml = `
+    document.getElementById('resultadoFinal').innerHTML = `
         <table>
-            <tr><th>Alimento</th><th>Gramos</th><th>P</th><th>G</th><th>CH</th></tr>
+            <tr><th>Alimento</th><th>Gramos</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>
             ${rows}
             <tr class="total-row">
-                <td>TOTAL ALCANZADO</td>
-                <td>${tK.toFixed(0)} kcal</td>
-                <td>${tP.toFixed(1)}g <span class="deviation ${Math.abs(devP)<1.5?'dev-ok':'dev-err'}">(${devP>0?'+':''}${devP.toFixed(1)})</span></td>
-                <td>${tG.toFixed(1)}g <span class="deviation ${Math.abs(devG)<1.5?'dev-ok':'dev-err'}">(${devG>0?'+':''}${devG.toFixed(1)})</span></td>
-                <td>${tCH.toFixed(1)}g <span class="deviation ${Math.abs(devCH)<1.5?'dev-ok':'dev-err'}">(${devCH>0?'+':''}${devCH.toFixed(1)})</span></td>
+                <td>TOTAL ALCANZADO</td><td>${tK.toFixed(0)} Kcal</td>
+                <td>${tP.toFixed(1)} <span class="deviation ${Math.abs(dP)<1.5?'dev-ok':'dev-err'}">(${dP>0?'+':''}${dP.toFixed(1)})</span></td>
+                <td>${tG.toFixed(1)} <span class="deviation ${Math.abs(dG)<1.5?'dev-ok':'dev-err'}">(${dG>0?'+':''}${dG.toFixed(1)})</span></td>
+                <td>${tCH.toFixed(1)} <span class="deviation ${Math.abs(dCH)<1.5?'dev-ok':'dev-err'}">(${dCH>0?'+':''}${dCH.toFixed(1)})</span></td>
             </tr>
         </table>
+        <p style="font-size:0.8rem; color:#64748b; margin-top:10px"><i>Info: Los valores en azul son editables. Al cambiar uno, el resto se recalcula para mantener el objetivo.</i></p>
     `;
-    
-    document.getElementById('resultadoFinal').innerHTML = resHtml;
     document.getElementById('btnCSV').style.display = 'block';
 }
 
 function exportarCSV() {
-    let csvContent = "data:text/csv;charset=utf-8,Alimento,Gramos,Kcal,Proteina,Grasa,CH\n";
+    let csv = "\uFEFFAlimento,Gramos,Kcal,Proteina,Grasa,CH\n";
     seleccionados.forEach(s => {
         const g = Math.round(s.gramos);
-        csvContent += `"${s.n}",${g},${(s.kcal*g/100).toFixed(1)},${(s.p*g/100).toFixed(1)},${(s.g*g/100).toFixed(1)},${(s.ch*g/100).toFixed(1)}\n`;
+        csv += `"${s.n}",${g},${(s.kcal*g/100).toFixed(1)},${(s.p*g/100).toFixed(1)},${(s.g*g/100).toFixed(1)},${(s.ch*g/100).toFixed(1)}\n`;
     });
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Receta_Miquel_${document.getElementById('comidaSel').value}.csv`);
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Plan_Nutricional_Miquel.csv`);
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 }
 </script>
-
 </body>
 </html>
