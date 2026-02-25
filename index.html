@@ -2,50 +2,95 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trail Nutri-ERP | Miquel V3.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trail Nutri-ERP | Miquel V3.3</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
             --primary: #0f172a; --accent: #10b981; --blue: #3b82f6; 
             --bg: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; 
             --text-light: #64748b; --error: #f43f5e;
+            --radius: 12px;
         }
         
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; }
+        /* Reset y Base */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: var(--bg); color: var(--text-main); 
+            line-height: 1.5; margin: 0; padding: 10px; 
+        }
 
-        .card { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #f1f5f9; }
+        .container { max-width: 1100px; margin: 0 auto; width: 100%; }
 
-        h1 { font-size: 1.8rem; color: var(--primary); font-weight: 800; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; }
-        h3 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        /* Tarjetas */
+        .card { 
+            background: var(--card-bg); padding: 20px; border-radius: var(--radius); 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; 
+            border: 1px solid #f1f5f9; 
+        }
 
-        .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
-        .btn-blue { background: var(--blue); color: white; }
-        .btn-ghost { background: #f1f5f9; color: var(--text-light); }
+        h1 { font-size: 1.5rem; color: var(--primary); font-weight: 800; margin: 20px 0; display: flex; align-items: center; gap: 10px; }
+        h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+        /* Botones Adaptables */
+        .btn { 
+            padding: 12px 16px; border-radius: 10px; border: none; font-weight: 700; 
+            cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; 
+            justify-content: center; gap: 8px; font-size: 0.9rem; min-height: 48px;
+        }
+        .btn-blue { background: var(--blue); color: white; width: 100%; }
+        .btn-ghost { background: #f1f5f9; color: var(--text-light); flex: 1; }
         .btn-success { background: var(--accent); color: white; width: 100%; margin-top: 20px; }
 
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        label { font-weight: 600; font-size: 0.8rem; color: var(--text-light); margin-bottom: 6px; display: block; }
-        input, select { width: 100%; padding: 12px; border: 2px solid #f1f5f9; border-radius: 10px; font-size: 0.95rem; background: #fcfcfd; box-sizing: border-box; }
-
-        .collapsible { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #f8fafc; color: var(--text-light); font-weight: 600; padding: 12px; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center; font-size: 0.85rem; }
+        /* Grid de Inputs Responsivo */
+        .grid-inputs { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            gap: 15px; margin-bottom: 15px; 
+        }
         
-        .row-day { background: #f1f5f9; font-weight: 800; color: var(--primary); }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; }
+        input, select { 
+            width: 100%; padding: 10px; border: 2px solid #f1f5f9; border-radius: 10px; 
+            font-size: 1rem; background: #fcfcfd; min-height: 44px;
+        }
+
+        /* Tablas Responsivas */
+        .table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; } /* Min-width asegura legibilidad en scroll */
+        th { background: #f8fafc; color: var(--text-light); font-weight: 600; padding: 10px; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-size: 0.85rem; }
+        
+        .row-day { background: #f1f5f9; font-weight: 800; }
         .row-meal { color: var(--text-light); font-style: italic; }
 
-        .chip { padding: 10px 18px; border-radius: 12px; background: #f1f5f9; cursor: pointer; font-size: 0.85rem; font-weight: 600; border: 2px solid transparent; }
+        /* Chips de Selección */
+        .meal-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .chip { 
+            flex: 1 1 calc(50% - 10px); /* 2 por fila en móvil */
+            padding: 12px; border-radius: 10px; background: #f1f5f9; cursor: pointer; 
+            font-size: 0.8rem; font-weight: 600; border: 2px solid transparent; text-align: center;
+        }
         .chip input { display: none; }
         .chip:has(input:checked) { background: #eff6ff; border-color: var(--blue); color: var(--blue); }
 
-        .input-gramos { width: 70px; text-align: center; font-weight: 700; border: 2px solid var(--blue); color: var(--blue); border-radius: 6px; }
+        /* Utilidades */
+        .collapsible { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0; }
+        .input-gramos { width: 65px; text-align: center; font-weight: 700; border: 2px solid var(--blue); color: var(--blue); border-radius: 6px; padding: 5px; }
         .locked { border-color: var(--error); color: var(--error); background: #fff1f2; }
         .deviation { font-size: 0.7rem; display: block; font-weight: 800; }
         .dev-ok { color: var(--accent); } .dev-err { color: var(--error); }
+
+        /* Media Queries para Tablets y Desktop */
+        @media (min-width: 768px) {
+            body { padding: 30px; }
+            h1 { font-size: 2rem; }
+            .grid-inputs { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+            .chip { flex: 0 0 auto; min-width: 120px; }
+            .btn-blue { width: auto; padding: 0 30px; }
+        }
     </style>
 </head>
 <body>
@@ -53,58 +98,64 @@
 <div class="container">
     <h1><i class="fa-solid fa-mountain-sun" style="color:var(--accent)"></i> Trail Nutri-ERP</h1>
 
-    <div id="status" class="card" style="padding:15px; font-size:0.8rem;">⏳ Cargando base de datos...</div>
+    <div id="status" class="card" style="padding:12px; font-size:0.75rem;">⏳ Conectando base de datos...</div>
 
     <div class="card">
-        <h3><i class="fa-solid fa-user-gear"></i> Perfil y Configuración</h3>
-        <div class="grid-3">
-            <div><label>Peso (kg)</label><input type="number" id="peso" value="75"></div>
-            <div><label>Altura (cm)</label><input type="number" id="altura" value="180"></div>
-            <div><label>Edad</label><input type="number" id="edad" value="35"></div>
-            <div><label>Género</label><select id="genero"><option value="hombre">Hombre</option><option value="mujer">Mujer</option></select></div>
-            <div><label>Ajuste Kcal (%)</label><input type="number" id="ajusteKcal" value="0"></div>
-            <div style="display:flex; align-items: flex-end;"><button class="btn btn-blue" style="width:100%" onclick="calcularTodo()"><i class="fa-solid fa-sync"></i> Calcular Presupuesto</button></div>
+        <h3><i class="fa-solid fa-user-gear"></i> Perfil Biométrico</h3>
+        <div class="grid-inputs">
+            <div class="input-group"><label>Peso (kg)</label><input type="number" id="peso" value="75"></div>
+            <div class="input-group"><label>Altura (cm)</label><input type="number" id="altura" value="180"></div>
+            <div class="input-group"><label>Edad</label><input type="number" id="edad" value="35"></div>
+            <div class="input-group"><label>Género</label><select id="genero"><option value="hombre">Hombre</option><option value="mujer">Mujer</option></select></div>
+            <div class="input-group"><label>Ajuste %</label><input type="number" id="ajusteKcal" value="0"></div>
+            <div class="input-group" style="justify-content: flex-end;">
+                <button class="btn btn-blue" onclick="calcularTodo()"><i class="fa-solid fa-sync"></i> Calcular</button>
+            </div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-ghost" onclick="toggle('secConfig')"><i class="fa-solid fa-sliders"></i> Configurar Ratios</button>
-            <button class="btn btn-ghost" onclick="toggle('secResumen')"><i class="fa-solid fa-list-check"></i> Resumen por Comida</button>
+        <div style="display:flex; gap:8px; margin-top:15px; flex-wrap: wrap;">
+            <button class="btn btn-ghost" onclick="toggle('secConfig')"><i class="fa-solid fa-sliders"></i> Ratios</button>
+            <button class="btn btn-ghost" onclick="toggle('secResumen')"><i class="fa-solid fa-list-check"></i> Resumen</button>
         </div>
 
         <div id="secConfig" class="collapsible">
             <h3>Multiplicadores de Gasto y Macros</h3>
-            <table>
-                <tr><th>Día</th><th>Gasto</th><th>Prot (g/kg)</th><th>Grasa (g/kg)</th><th style="color:var(--blue)">CH (g/kg) Info</th></tr>
-                <tr><td>Alta</td><td><input type="number" id="mAlta" value="1.6" step="0.1"></td><td><input type="number" id="pAlta" value="2.0" step="0.1"></td><td><input type="number" id="gAlta" value="1.1" step="0.1"></td><td id="infoCH_Alta">-</td></tr>
-                <tr><td>Media</td><td><input type="number" id="mMedia" value="1.45" step="0.1"></td><td><input type="number" id="pMedia" value="1.7" step="0.1"></td><td><input type="number" id="gMedia" value="1.1" step="0.1"></td><td id="infoCH_Media">-</td></tr>
-                <tr><td>Baja</td><td><input type="number" id="mBaja" value="1.2" step="0.1"></td><td><input type="number" id="pBaja" value="1.4" step="0.1"></td><td><input type="number" id="gBaja" value="0.7" step="0.1"></td><td id="infoCH_Baja">-</td></tr>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <tr><th>Día</th><th>Gasto</th><th>Prot</th><th>Grasa</th><th style="color:var(--blue)">CH g/kg</th></tr>
+                    <tr><td>Alta</td><td><input type="number" id="mAlta" value="1.6" step="0.1"></td><td><input type="number" id="pAlta" value="2.0" step="0.1"></td><td><input type="number" id="gAlta" value="1.1" step="0.1"></td><td id="infoCH_Alta">-</td></tr>
+                    <tr><td>Media</td><td><input type="number" id="mMedia" value="1.45" step="0.1"></td><td><input type="number" id="pMedia" value="1.7" step="0.1"></td><td><input type="number" id="gMedia" value="1.1" step="0.1"></td><td id="infoCH_Media">-</td></tr>
+                    <tr><td>Baja</td><td><input type="number" id="mBaja" value="1.2" step="0.1"></td><td><input type="number" id="pBaja" value="1.4" step="0.1"></td><td><input type="number" id="gBaja" value="0.7" step="0.1"></td><td id="infoCH_Baja">-</td></tr>
+                </table>
+            </div>
             <h3 style="margin-top:20px;">Reparto % por Comida</h3>
-            <table>
-                <tr><th>Comida</th><th>Prot %</th><th>Grasa %</th><th>CH %</th></tr>
-                <tr><td>Desayuno</td><td><input type="number" id="rep_des_p" value="10"></td><td><input type="number" id="rep_des_g" value="10"></td><td><input type="number" id="rep_des_ch" value="27"></td></tr>
-                <tr><td>Comida</td><td><input type="number" id="rep_com_p" value="39"></td><td><input type="number" id="rep_com_g" value="40"></td><td><input type="number" id="rep_com_ch" value="26"></td></tr>
-                <tr><td>Merienda</td><td><input type="number" id="rep_mer_p" value="8"></td><td><input type="number" id="rep_mer_g" value="6"></td><td><input type="number" id="rep_mer_ch" value="17"></td></tr>
-                <tr><td>Cena</td><td><input type="number" id="rep_cen_p" value="43"></td><td><input type="number" id="rep_cen_g" value="44"></td><td><input type="number" id="rep_cen_ch" value="30"></td></tr>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <tr><th>Comida</th><th>Prot %</th><th>Grasa %</th><th>CH %</th></tr>
+                    <tr><td>Desayuno</td><td><input type="number" id="rep_des_p" value="10"></td><td><input type="number" id="rep_des_g" value="10"></td><td><input type="number" id="rep_des_ch" value="27"></td></tr>
+                    <tr><td>Comida</td><td><input type="number" id="rep_com_p" value="39"></td><td><input type="number" id="rep_com_g" value="40"></td><td><input type="number" id="rep_com_ch" value="26"></td></tr>
+                    <tr><td>Merienda</td><td><input type="number" id="rep_mer_p" value="8"></td><td><input type="number" id="rep_mer_g" value="6"></td><td><input type="number" id="rep_mer_ch" value="17"></td></tr>
+                    <tr><td>Cena</td><td><input type="number" id="rep_cen_p" value="43"></td><td><input type="number" id="rep_cen_g" value="44"></td><td><input type="number" id="rep_cen_ch" value="30"></td></tr>
+                </table>
+            </div>
         </div>
 
         <div id="secResumen" class="collapsible">
-            <h3>Presupuesto Desglosado por Comida</h3>
-            <div id="tablaResumenDetallada"></div>
+            <h3>Presupuesto por Comida</h3>
+            <div id="tablaResumenDetallada" class="table-wrapper"></div>
         </div>
     </div>
 
     <div id="cardPlanner" class="card" style="display:none;">
         <h3><i class="fa-solid fa-calendar-day"></i> Diseño de Jornada</h3>
-        <div class="grid-3">
-            <div>
+        <div class="grid-inputs">
+            <div class="input-group">
                 <label>Tipo de Día</label>
                 <select id="tipoDiaSel" onchange="recalcularTodo()"><option value="Alta">🏔️ Día Alta</option><option value="Media">🏃 Día Media</option><option value="Baja">🧘 Día Baja</option></select>
             </div>
-            <div style="grid-column: span 2;">
+            <div class="input-group" style="grid-column: 1 / -1;">
                 <label>Comidas a diseñar:</label>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                <div class="meal-selector">
                     <label class="chip"><input type="checkbox" value="desayuno" onchange="toggleMealSection(this)"> Desayuno</label>
                     <label class="chip"><input type="checkbox" value="comida" onchange="toggleMealSection(this)"> Comida</label>
                     <label class="chip"><input type="checkbox" value="merienda" onchange="toggleMealSection(this)"> Merienda</label>
@@ -117,7 +168,7 @@
     <div id="mealContainer"></div>
 
     <div id="footerActions" class="card" style="display:none; text-align:right; background: var(--primary);">
-        <button class="btn btn-success" onclick="exportarCSV()"><i class="fa-solid fa-file-export"></i> Descargar Plan Completo (CSV)</button>
+        <button class="btn btn-success" onclick="exportarCSV()"><i class="fa-solid fa-file-export"></i> Descargar Plan (CSV)</button>
     </div>
 </div>
 
@@ -133,7 +184,7 @@ window.onload = () => {
             const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             return { n: c[0].replace(/"/g, '').trim(), kcal: pN(c[1]), p: pN(c[2]), g: pN(c[3]), ch: pN(c[4]) };
         }).filter(a => a.n !== "");
-        document.getElementById('status').innerHTML = `<span style="color:var(--accent)">● Base de Datos Conectada (${dbAlimentos.length} items)</span>`;
+        document.getElementById('status').innerHTML = `<span style="color:var(--accent)">● Base de Datos Conectada (${dbAlimentos.length})</span>`;
     });
 };
 
@@ -149,19 +200,17 @@ function calcularTodo() {
     const bmr = (g === 'hombre') ? (10 * p + 6.25 * h - 5 * e + 5) : (10 * p + 6.25 * h - 5 * e - 161);
     
     presu = {};
-    let html = `<table><tr><th>Día / Comida</th><th>Kcal</th><th>P (g)</th><th>G (g)</th><th>CH (g)</th></tr>`;
+    let html = `<table><tr><th>Día / Comida</th><th>Kcal</th><th>P</th><th>G</th><th>CH</th></tr>`;
 
     ['Alta', 'Media', 'Baja'].forEach(tipo => {
         const kcalT = bmr * pN(document.getElementById('m' + tipo).value) * adj;
         const pT = p * pN(document.getElementById('p' + tipo).value);
         const gT = p * pN(document.getElementById('g' + tipo).value);
         const chT = (kcalT - (pT * 4) - (gT * 9)) / 4;
-        
-        // Actualizar info CH g/kg
-        document.getElementById('infoCH_'+tipo).innerText = (chT / p).toFixed(1) + " g/kg";
+        document.getElementById('infoCH_'+tipo).innerText = (chT / p).toFixed(1);
 
         presu[tipo] = { p: pT, g: gT, ch: chT, kcal: kcalT, meals: {} };
-        html += `<tr class="row-day"><td>DÍA ${tipo.toUpperCase()}</td><td>${kcalT.toFixed(0)}</td><td>${pT.toFixed(0)}</td><td>${gT.toFixed(0)}</td><td>${chT.toFixed(0)}</td></tr>`;
+        html += `<tr class="row-day"><td>DÍA ${tipo}</td><td>${kcalT.toFixed(0)}</td><td>${pT.toFixed(0)}</td><td>${gT.toFixed(0)}</td><td>${chT.toFixed(0)}</td></tr>`;
 
         [['des','Desayuno'],['com','Comida'],['mer','Merienda'],['cen','Cena']].forEach(m => {
             const key = m[1].toLowerCase();
@@ -187,16 +236,14 @@ function toggleMealSection(cb) {
             <div id="section_${m}" class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">
                     <h3 style="margin:0;"><i class="fa-solid fa-utensils"></i> ${m.toUpperCase()}</h3>
-                    <div id="target_${m}" style="font-size:0.7rem; font-weight:800; color:var(--blue)"></div>
+                    <div id="target_${m}" style="font-size:0.65rem; font-weight:800; color:var(--blue); text-align:right;"></div>
                 </div>
-                <div class="grid-3" style="margin-bottom:15px;">
-                    <div style="grid-column: span 2;">
-                        <input type="text" id="bus_${m}" list="list_${m}" placeholder="Mínimo 3 letras..." oninput="filtrar('${m}', this.value)" onkeypress="if(event.key==='Enter') añadir('${m}')">
-                        <datalist id="list_${m}"></datalist>
-                    </div>
-                    <button class="btn btn-blue" onclick="añadir('${m}')"><i class="fa-solid fa-plus"></i> Añadir</button>
+                <div class="grid-inputs" style="grid-template-columns: 1fr auto;">
+                    <input type="text" id="bus_${m}" list="list_${m}" placeholder="Buscar..." oninput="filtrar('${m}', this.value)" onkeypress="if(event.key==='Enter') añadir('${m}')">
+                    <datalist id="list_${m}"></datalist>
+                    <button class="btn btn-blue" onclick="añadir('${m}')" style="min-width: 50px;"><i class="fa-solid fa-plus"></i></button>
                 </div>
-                <div id="res_${m}"></div>
+                <div class="table-wrapper" id="res_${m}"></div>
             </div>`;
         document.getElementById('mealContainer').insertAdjacentHTML('beforeend', html);
         renderMeal(m);
@@ -253,10 +300,10 @@ function renderMeal(m) {
     }).join('');
 
     const dP=tP-target.p, dG=tG-target.g, dCH=tCH-target.ch, dK=tK-target.kcal;
-    document.getElementById('target_'+m).innerHTML = `OBJ: ${target.kcal.toFixed(0)} kcal | P:${target.p.toFixed(0)} G:${target.g.toFixed(0)} CH:${target.ch.toFixed(0)}`;
+    document.getElementById('target_'+m).innerHTML = `OBJ: ${target.kcal.toFixed(0)}k | P:${target.p.toFixed(0)} G:${target.g.toFixed(0)} CH:${target.ch.toFixed(0)}`;
     document.getElementById('res_'+m).innerHTML = `
         <table>
-            <tr><th>Alimento</th><th>Gramos</th><th>P</th><th>G</th><th>CH</th><th></th></tr>
+            <tr><th>Alimento</th><th>gr</th><th>P</th><th>G</th><th>CH</th><th></th></tr>
             ${rows}
             <tr class="row-day"><td>TOTAL</td>
                 <td>${tK.toFixed(0)} <span class="deviation ${Math.abs(dK)<20?'dev-ok':'dev-err'}">(${dK>0?'+':''}${dK.toFixed(0)})</span></td>
